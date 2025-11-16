@@ -22,17 +22,10 @@ TARGET_URL = "https://warszawa19115.pl/harmonogramy-wywozu-odpadow"
 # Flagi działania
 HEADLESS = False  # ustaw True jeśli chcesz z powrotem tryb bez okna
 CLICK_COOKIES = True  # spróbuj kliknąć baner cookies jeśli występuje
-ACTION_DELAY = 0.8  # sekundy pauzy między kluczowymi akcjami (spowolnienie klików)
+ACTION_DELAY = 0.5  # sekundy pauzy między kluczowymi akcjami (spowolnienie klików)
 
 # Nazwy plików
 OUTPUT_FILENAME = "harmonogram.txt"
-
-
-# --- SŁOWNIKI DO PRZETWARZANIA DANYCH ---
-
-# Słownik mapujący znaki (ikony) z PDF na rodzaj odpadów.
-# UWAGA: Te znaki zostały ustalone na podstawie analizy PDF-a i mogą się zmienić.
-# Jeśli w przyszłości skrypt przestanie działać, to jest pierwsze miejsce do sprawdzenia.
 
 def download_schedule_pdf():
     """
@@ -116,7 +109,6 @@ def download_schedule_pdf():
         except Exception:
             driver.execute_script("arguments[0].click();", chosen)
         print(" - Wybrano sugestię adresu")
-        time.sleep(1)  # Czekaj 1 sekundę po wyborze
 
     def go_next(driver, wait):
         next_button = wait.until(EC.element_to_be_clickable((By.ID, "buttonNext")))
