@@ -14,9 +14,6 @@ from selenium.common.exceptions import ElementNotInteractableException
 from selenium.webdriver.common.keys import Keys
 from webdriver_manager.chrome import ChromeDriverManager
 
-# pdfplumber - do czytania danych z PDF
-import pdfplumber
-
 # --- KONFIGURACJA ---
 # Adres, dla którego chcesz pobrać harmonogram
 ADDRESS_TO_SEARCH = "MARSZAŁKOWSKA 1 00-624 Śródmieście"
@@ -27,11 +24,8 @@ HEADLESS = False  # ustaw True jeśli chcesz z powrotem tryb bez okna
 CLICK_COOKIES = True  # spróbuj kliknąć baner cookies jeśli występuje
 ACTION_DELAY = 0.8  # sekundy pauzy między kluczowymi akcjami (spowolnienie klików)
 
-# Nazwy folderów i plików
-DOWNLOAD_DIR = os.path.join(os.getcwd(), "downloads")
-PDF_FILENAME = "harmonogram.pdf"
+# Nazwy plików
 OUTPUT_FILENAME = "harmonogram.txt"
-PDF_FULL_PATH = os.path.join(DOWNLOAD_DIR, PDF_FILENAME)
 
 
 # --- SŁOWNIKI DO PRZETWARZANIA DANYCH ---
@@ -152,53 +146,38 @@ def download_schedule_pdf():
         print(" - Kliknięto 'Dalej'")
         slow_sleep("po 'Dalej'")
 
-    def download_pdf(driver, wait):
-        download_link = wait.until(EC.element_to_be_clickable((By.ID, "downloadPdfLink")))
-        download_link.click()
-        print(" - Kliknięto 'Pobierz harmonogram'")
-        slow_sleep("po kliknięciu pobierz")
-        timeout = 30
-        end_time = time.time() + timeout
-        while not os.path.exists(PDF_FULL_PATH):
-            time.sleep(1)
-            if time.time() > end_time:
-                raise Exception("Nie udało się pobrać pliku PDF w określonym czasie.")
-        print(" - Plik PDF został pomyślnie pobrany.")
-
-    def click_final_next(driver, wait):
-        # Opcjonalny końcowy klik "Dalej" jeśli przycisk nadal istnieje (stabilizacja przepływu)
-        try:
-            # Ponowne kliknięcie sugestii adresu jeśli nadal widoczna (wymuszenie poprawnego wyboru)
+    def scrape_schedule_from_page(driver, wait):
+        """Czyta daty wywozu bezpośrednio z HTML strony."""
+        print(" - Czytam daty z HTML...")
+        slow_sleep("ładowanie strony z datami")
+        
+        # Mapowanie ID divów na nazwy frakcji
+        date_divs = {
+            "paper-date": "Papier",
+            "mixed-date": "Zmieszane",
+            "metals-date": "Metale i tworzywa sztuczne",
+            "glass-date": "Szkło",
+            "bio-date": "Bio"
+        }
+        
+        schedule_data = []
+        for div_id, waste_type in date_divs.items():
             try:
-                sugg_xpath = "//li[contains(@class,'yui3-aclist-item') and (normalize-space(.)='MARSZAŁKOWSKA 1 00-624 Śródmieście' or @data-text='MARSZAŁKOWSKA 1 00-624 Śródmieście')]"
-                sugg_el = driver.find_element(By.XPATH, sugg_xpath)
-                if sugg_el.is_displayed():
-                    try:
-                        sugg_el.click()
-                    except Exception:
-                        driver.execute_script("arguments[0].click();", sugg_el)
-                    print(" - Ponownie wybrano sugestię adresu przed końcowym 'Dalej'")
-                    slow_sleep("po ponownym wyborze sugestii")
-            except Exception:
-                pass
-            final_btn = wait.until(EC.element_to_be_clickable((By.ID, "buttonNext")))
-            final_btn.click()
-            print(" - Końcowy klik 'Dalej' wykonany")
-            slow_sleep("po końcowym 'Dalej'")
-        except Exception:
-            print(" - Brak dodatkowego przycisku 'Dalej' lub niedostępny - pomijam")
+                date_element = driver.find_element(By.ID, div_id)
+                date_text = date_element.text.strip()
+                if date_text:
+                    schedule_data.append((date_text, waste_type))
+                    print(f"   {waste_type}: {date_text}")
+            except Exception as e:
+                print(f"   Brak daty dla {waste_type} (ID: {div_id})")
+        
+        return schedule_data
 
     # Konfiguracja opcji przeglądarki Chrome
     chrome_options = Options()
     if HEADLESS:
         chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--window-size=1920,1080")
-    chrome_options.add_experimental_option("prefs", {
-        "download.default_directory": DOWNLOAD_DIR,
-        "download.prompt_for_download": False,
-        "download.directory_upgrade": True,
-        "plugins.always_open_pdf_externally": True  # Zapobiega otwieraniu PDF w przeglądarce
-    })
 
     # Automatyczne zarządzanie sterownikiem przeglądarki
     service = Service(ChromeDriverManager().install())
@@ -211,78 +190,27 @@ def download_schedule_pdf():
         address_input = enter_address(driver, wait)
         choose_suggestion(driver, wait, address_input)
         go_next(driver, wait)
-        download_pdf(driver, wait)
-        click_final_next(driver, wait)
+        schedule_data = scrape_schedule_from_page(driver, wait)
+        return schedule_data
     finally:
         driver.quit()  # Zawsze zamykaj przeglądarkę
 
-def parse_schedule_from_pdf():
-    """Przetwarza pobrany plik PDF, wyciągając z niego daty i rodzaje odpadów."""
-    print("\nKrok 2: Przetwarzanie pliku PDF...")
-    all_events = []
-    current_year = int(datetime.now().year)
 
-    if not os.path.exists(PDF_FULL_PATH):
-        print(" - Brak pliku PDF do analizy.")
-        return all_events
-
-    with pdfplumber.open(PDF_FULL_PATH) as pdf:
-        for page in pdf.pages:
-            table_settings = {
-                "vertical_strategy": "lines",
-                "horizontal_strategy": "text",
-            }
-            tables = page.extract_tables(table_settings)
-            for table in tables:
-                month_name = table[0][0].upper() if table[0][0] else ""
-                if month_name not in MONTH_MAP:
-                    continue
-                month_number = MONTH_MAP[month_name]
-                print(f" - Przetwarzam miesiąc: {month_name}")
-                if month_number < 6 and datetime.now().month > 6:
-                    year_for_month = current_year + 1
-                else:
-                    year_for_month = current_year
-                for row in table[1:]:
-                    for cell in row:
-                        if not cell:
-                            continue
-                        day_match = re.search(r'^\d{1,2}', cell)
-                        if not day_match:
-                            continue
-                        day = int(day_match.group(0))
-                        waste_types_found = []
-                        cell_content_lower = cell.lower()
-                        for icon, waste_type in ICON_MAP.items():
-                            if icon in cell_content_lower:
-                                waste_types_found.append(waste_type)
-                        if waste_types_found:
-                            try:
-                                event_date = datetime(year_for_month, month_number, day)
-                                all_events.append((event_date, waste_types_found))
-                            except ValueError:
-                                print(f"   ! Błędna data: Dzień={day}, Miesiąc={month_name}, Rok={year_for_month}")
-    print(" - Zakończono analizę PDF.")
-    return all_events
 
 def save_schedule_to_file(schedule_data):
     """
-    Sortuje zebrane dane chronologicznie i zapisuje je do pliku tekstowego.
+    Zapisuje zebrane dane do pliku tekstowego.
+    schedule_data: lista tupli (date_text, waste_type) np. [("4 Grudnia", "Papier"), ...]
     """
-    print("\nKrok 3: Zapisywanie harmonogramu do pliku...")
+    print("\nKrok 2: Zapisywanie harmonogramu do pliku...")
 
     if not schedule_data:
         print(" - Nie znaleziono żadnych terminów do zapisania.")
         return
 
-    # Sortuj chronologicznie
-    schedule_data.sort(key=lambda x: x[0])
-
     with open(OUTPUT_FILENAME, "w", encoding="utf-8") as f:
-        for date, waste_types in schedule_data:
-            date_str = date.strftime("%d-%m-%Y")
-            waste_types_str = ", ".join(waste_types)
-            line = f"{date_str} - {waste_types_str}\n"
+        for date_text, waste_type in schedule_data:
+            line = f"{date_text} - {waste_type}\n"
             f.write(line)
     
     print(f" - Harmonogram został zapisany w pliku: {OUTPUT_FILENAME}")
@@ -294,34 +222,23 @@ def main():
     """
     print("--- Start: Automat do pobierania harmonogramu wywozu odpadów ---")
 
-    # Utwórz folder na pobrane pliki, jeśli nie istnieje
-    if not os.path.exists(DOWNLOAD_DIR):
-        os.makedirs(DOWNLOAD_DIR)
-        
-    # Usuń stary plik PDF i TXT, jeśli istnieją, aby zacząć na czysto
-    if os.path.exists(PDF_FULL_PATH):
-        os.remove(PDF_FULL_PATH)
+    # Usuń stary plik TXT, jeśli istnieje, aby zacząć na czysto
     if os.path.exists(OUTPUT_FILENAME):
         os.remove(OUTPUT_FILENAME)
         
     try:
-        # Krok 1: Pobieranie
-        download_schedule_pdf()
+        # Krok 1: Pobieranie i przetwarzanie
+        schedule_data = download_schedule_pdf()
         
-        # Krok 2: Przetwarzanie
-        schedule = parse_schedule_from_pdf()
-        
-        # Krok 3: Zapis
-        save_schedule_to_file(schedule)
+        # Krok 2: Zapis
+        if schedule_data:
+            save_schedule_to_file(schedule_data)
+        else:
+            print(" - Nie udało się pobrać danych harmonogramu.")
 
     except Exception as e:
         print(f"\n[BŁĄD] Wystąpił nieoczekiwany problem: {e}")
         print("Sprawdź swoje połączenie z internetem lub czy strona 19115 nie uległa zmianie.")
-    finally:
-        # Sprzątanie - usuń pobrany plik PDF
-        if os.path.exists(PDF_FULL_PATH):
-            os.remove(PDF_FULL_PATH)
-            print("\nKrok 4: Sprzątanie - usunięto tymczasowy plik PDF.")
 
     print("\n--- Zakończono pracę ---")
 
