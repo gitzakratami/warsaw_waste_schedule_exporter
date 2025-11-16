@@ -10,6 +10,8 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import ElementNotInteractableException
+from selenium.webdriver.common.keys import Keys
 from webdriver_manager.chrome import ChromeDriverManager
 
 # pdfplumber - do czytania danych z PDF
@@ -17,8 +19,12 @@ import pdfplumber
 
 # --- KONFIGURACJA ---
 # Adres, dla którego chcesz pobrać harmonogram
-ADDRESS_TO_SEARCH = "Marszałkowska 1, 00-624 Warszawa"
+ADDRESS_TO_SEARCH = "MARSZAŁKOWSKA 1 00-624 Śródmieście"
 TARGET_URL = "https://warszawa19115.pl/harmonogramy-wywozu-odpadow"
+
+# Flagi działania
+HEADLESS = False  # ustaw True jeśli chcesz z powrotem tryb bez okna
+CLICK_COOKIES = True  # spróbuj kliknąć baner cookies jeśli występuje
 
 # Nazwy folderów i plików
 DOWNLOAD_DIR = os.path.join(os.getcwd(), "downloads")
@@ -57,7 +63,8 @@ def download_schedule_pdf():
 
     # Konfiguracja opcji przeglądarki Chrome
     chrome_options = Options()
-    chrome_options.add_argument("--headless")  # Uruchomienie w tle, bez widocznego okna
+    if HEADLESS:
+        chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_experimental_option("prefs", {
         "download.default_directory": DOWNLOAD_DIR,
@@ -72,16 +79,81 @@ def download_schedule_pdf():
 
     try:
         driver.get(TARGET_URL)
-        wait = WebDriverWait(driver, 20) # Czekaj maksymalnie 20 sekund na elementy
+        wait = WebDriverWait(driver, 25)  # Czekaj maksymalnie 25 sekund na elementy
 
-        # Znajdź pole adresu i wpisz adres
-        address_input = wait.until(EC.presence_of_element_located((By.ID, "addressAutoComplete")))
-        address_input.send_keys(ADDRESS_TO_SEARCH)
+        # Spróbuj kliknąć baner cookies jeśli istnieje
+        if CLICK_COOKIES:
+            try:
+                # Najpierw bardzo konkretny przycisk podany przez użytkownika
+                try:
+                    consent_btn = WebDriverWait(driver, 5).until(
+                        EC.element_to_be_clickable((By.XPATH, "//button[.//span[text()='Zgoda na wszystkie']]|//span[text()='Zgoda na wszystkie']/ancestor::button"))
+                    )
+                    consent_btn.click()
+                    print(" - Kliknięto 'Zgoda na wszystkie'")
+                except Exception:
+                    # Lista bardziej ogólnych selektorów
+                    cookie_xpaths = [
+                        "//button[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŻŹ', 'abcdefghijklmnopqrstuvwxyząćęłńóśżź'),'zgoda na wszystkie')]",
+                        "//button[contains(.,'Zgoda na wszystkie')]",
+                        "//button[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŻŹ', 'abcdefghijklmnopqrstuvwxyząćęłńóśżź'),'akceptuj')]",
+                        "//button[contains(.,'Akceptuj') or contains(.,'ZGADZAM') or contains(.,'Accept')]",
+                        "//div[contains(@class,'cookie')]//button"
+                    ]
+                    for cx in cookie_xpaths:
+                        buttons = driver.find_elements(By.XPATH, cx)
+                        if buttons:
+                            try:
+                                buttons[0].click()
+                                print(" - Kliknięto przycisk cookies")
+                                break
+                            except Exception:
+                                driver.execute_script("arguments[0].click();", buttons[0])
+                                print(" - Kliknięto przycisk cookies (JS)")
+                                break
+            except Exception as e:
+                print(f" - Nie kliknięto cookies (ignoruję): {e}")
+
+        # Znajdź pole adresu i upewnij się, że jest klikalne
+        address_input = wait.until(EC.element_to_be_clickable((By.ID, "addressAutoComplete")))
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", address_input)
+        try:
+            address_input.clear()
+            address_input.send_keys(ADDRESS_TO_SEARCH)
+        except ElementNotInteractableException:
+            # Fallback JS jeśli Selenium nie może wpisać
+            driver.execute_script(
+                "arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input'));",
+                address_input,
+                ADDRESS_TO_SEARCH
+            )
         print(f" - Wpisano adres: {ADDRESS_TO_SEARCH}")
 
-        # Poczekaj na pojawienie się sugestii i kliknij pierwszą
-        suggestion = wait.until(EC.element_to_be_clickable((By.XPATH, "//div[contains(@class, 'yui3-aclist-item')]")))
-        suggestion.click()
+        # Poczekaj na listę sugestii (li) i wybierz odpowiednią
+        suggestions = wait.until(EC.visibility_of_all_elements_located((By.CSS_SELECTOR, "li.yui3-aclist-item")))
+        chosen = None
+        wanted_upper = ADDRESS_TO_SEARCH.upper()
+        for s in suggestions:
+            text_upper = s.text.strip().upper()
+            data_text = (s.get_attribute("data-text") or "").strip().upper()
+            if text_upper.startswith(wanted_upper) or data_text.startswith(wanted_upper):
+                chosen = s
+                break
+        if not chosen:
+            # jeśli nie znaleziono dokładnego dopasowania, weź pierwszą
+            chosen = suggestions[0]
+        try:
+            chosen.click()
+        except Exception:
+            driver.execute_script("arguments[0].click();", chosen)
+        print(" - Wybrano sugestię adresu")
+
+        # Fallback: jeśli pole nadal ma surową wartość i nie aktywowało się, spróbuj ENTER
+        try:
+            address_input.send_keys(Keys.ARROW_DOWN)
+            address_input.send_keys(Keys.ENTER)
+        except Exception:
+            pass
 
         # Kliknij przycisk "Dalej"
         next_button = wait.until(EC.element_to_be_clickable((By.ID, "buttonNext")))
