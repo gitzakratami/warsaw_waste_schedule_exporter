@@ -33,22 +33,6 @@ OUTPUT_FILENAME = "harmonogram.txt"
 # Słownik mapujący znaki (ikony) z PDF na rodzaj odpadów.
 # UWAGA: Te znaki zostały ustalone na podstawie analizy PDF-a i mogą się zmienić.
 # Jeśli w przyszłości skrypt przestanie działać, to jest pierwsze miejsce do sprawdzenia.
-ICON_MAP = {
-    'a': "Papier",
-    'b': "Bio",
-    'c': "Zmieszane",
-    'd': "Metale i tworzywa sztuczne",
-    'e': "Szkło",
-    'f': "Wielkogabarytowe",
-    'g': "Zielone",
-    'h': "Bio restauracyjne",
-}
-
-# Słownik do konwersji polskich nazw miesięcy na numery
-MONTH_MAP = {
-    'STYCZEŃ': 1, 'LUTY': 2, 'MARZEC': 3, 'KWIECIEŃ': 4, 'MAJ': 5, 'CZERWIEC': 6,
-    'LIPIEC': 7, 'SIERPIEŃ': 8, 'WRZESIEŃ': 9, 'PAŹDZIERNIK': 10, 'LISTOPAD': 11, 'GRUDZIEŃ': 12
-}
 
 def download_schedule_pdf():
     """
