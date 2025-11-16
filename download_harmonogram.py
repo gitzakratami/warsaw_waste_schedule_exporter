@@ -16,7 +16,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 # --- KONFIGURACJA ---
 # Adres, dla którego chcesz pobrać harmonogram
-ADDRESS_TO_SEARCH = "MARSZAŁKOWSKA 1 00-624 Śródmieście"
+ADDRESS_TO_SEARCH = "Obozowa 90"
 TARGET_URL = "https://warszawa19115.pl/harmonogramy-wywozu-odpadow"
 
 # Flagi działania
@@ -132,13 +132,7 @@ def download_schedule_pdf():
         except Exception:
             driver.execute_script("arguments[0].click();", chosen)
         print(" - Wybrano sugestię adresu")
-        slow_sleep("po wyborze sugestii")
-        try:
-            address_input.send_keys(Keys.ARROW_DOWN)
-            address_input.send_keys(Keys.ENTER)
-        except Exception:
-            pass
-        slow_sleep("fallback klawiatury")
+        time.sleep(1)  # Czekaj 1 sekundę po wyborze
 
     def go_next(driver, wait):
         next_button = wait.until(EC.element_to_be_clickable((By.ID, "buttonNext")))
@@ -209,6 +203,7 @@ def save_schedule_to_file(schedule_data):
         return
 
     with open(OUTPUT_FILENAME, "w", encoding="utf-8") as f:
+        f.write(f"{ADDRESS_TO_SEARCH}\n\n")
         for date_text, waste_type in schedule_data:
             line = f"{date_text} - {waste_type}\n"
             f.write(line)
