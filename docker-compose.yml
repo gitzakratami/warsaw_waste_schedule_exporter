@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  waste-bot:
+    build: .
+    container_name: waste_schedule_bot
+    volumes:
+      # Mapujemy cały bieżący katalog do /app w kontenerze.
+      # Dzięki temu skrypt widzi credentials.json, token.pickle
+      # i zapisuje harmonogram.txt oraz ODŚWIEŻONY token na dysku serwera.
+      - .:/app
+    environment:
+      - TZ=Europe/Warsaw

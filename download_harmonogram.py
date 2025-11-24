@@ -40,9 +40,8 @@ MONTH_MAP = {
 }
 
 # Kolory w Google Calendar (orientacyjne ID)
-# 1: Blue, 2: Green, 3: Purple, 4: Red, 5: Yellow, 6: Orange, 8: Graphite, 9: Blueberry, 10: Basil (Green), 11: Tomato
 WASTE_COLORS = {
-    "Papier": "9",        # Niebieski
+    "Papier": "7",        # Niebieski
     "Metale i tworzywa sztuczne": "5", # Żółty
     "Szkło": "10",        # Zielony
     "Bio": "8",           # Brązowy/Szary
@@ -57,9 +56,13 @@ def fetch_waste_schedule():
     print("--- Krok 1: Pobieranie danych ze strony WWW ---")
     
     chrome_options = Options()
-    # chrome_options.add_argument("--headless=new") # Odkomentuj, żeby ukryć okno
+    chrome_options.add_argument("--headless=new") # Odkomentuj, żeby ukryć okno
     chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument("--log-level=3")
+    # --- DODAJ TE LINIE DLA DOCKERA ---
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
 
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
@@ -103,10 +106,10 @@ def fetch_waste_schedule():
             "paper-date": "Papier",
             "mixed-date": "Zmieszane",
             "metals-date": "Metale i tworzywa sztuczne",
-            "glass-date": "Szkło",
-            "bio-date": "Bio",
-            "bulky-date": "Gabaryty",
-            "green-date": "Zielone"
+            # "glass-date": "Szkło",
+            # "bio-date": "Bio",
+            # "bulky-date": "Gabaryty",
+            # "green-date": "Zielone"
         }
 
         for html_id, waste_name in element_ids.items():
