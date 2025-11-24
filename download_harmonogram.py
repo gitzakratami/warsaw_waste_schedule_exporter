@@ -264,7 +264,7 @@ def sync_to_google_calendar(schedule_data):
             'reminders': {
                 'useDefault': False,
                 'overrides': [
-                    {'method': 'popup', 'minutes': 12 * 60}, # Powiadomienie 12h wcześniej
+                    {'method': 'popup', 'minutes': 5 * 60}, # Powiadomienie dzień wcześniej o 19:00 (5h przed północą)
                 ],
             },
         }
