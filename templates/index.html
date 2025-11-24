@@ -5,426 +5,455 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Harmonogram Wywozu Śmieci</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  
+  <!-- Konfiguracja Tailwind dla Dark Mode -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Poppins', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
     
-    body {
-      font-family: 'Poppins', sans-serif;
-    }
-
-    .pulse {
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0% { opacity: 0.6; }
-      50% { opacity: 1; }
-      100% { opacity: 0.6; }
-    }
-
-    .fade-in {
-      animation: fadeIn 0.8s ease-in;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .card-hover:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-      transition: all 0.3s ease;
-    }
-
-    .waste-badge {
-      display: inline-block;
-      padding: 0.25rem 0.5rem;
-      margin: 0.1rem;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 500;
-      cursor: pointer;
-    }
+    .fade-in { animation: fadeIn 0.6s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .card-hover:hover { transform: translateY(-3px); transition: all 0.3s ease; }
+    
+    /* Pasek przewijania */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .dark ::-webkit-scrollbar-thumb { background: #475569; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   </style>
 </head>
-<body class="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 min-h-screen">
+<body class="bg-gradient-to-br from-slate-100 via-gray-100 to-zinc-100 dark:from-slate-950 dark:via-slate-900 dark:to-black min-h-screen text-gray-800 dark:text-gray-100 transition-colors duration-300">
 
-  <div class="container mx-auto px-4 py-8 max-w-4xl">
+  <div class="container mx-auto px-4 py-8 max-w-5xl">
+    
     <!-- Header -->
-    <div class="text-center mb-10 fade-in">
-      <i class="fas fa-recycle text-5xl text-emerald-600 mb-4"></i>
-      <h1 class="text-4xl font-bold text-gray-800 mb-2">Harmonogram Wywozu Śmieci</h1>
-      <p class="text-lg text-gray-600">Automatyczna synchronizacja z Google Calendar</p>
-    </div>
-
-    <!-- Address Configuration -->
-    <div class="bg-white rounded-xl shadow-lg p-6 mb-8 card-hover fade-in" style="animation-delay: 0.1s">
-      <h2 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
-        <i class="fas fa-home text-emerald-500 mr-3"></i>
-        Adres
-      </h2>
-      <div class="flex gap-2">
-        <input type="text" id="addressInput" 
-               class="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-               value="Obozowa 90" />
-        <button onclick="saveAddress()" 
-                class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition duration-200">
-          <i class="fas fa-save"></i> Zapisz
-        </button>
-      </div>
-    </div>
-
-    <!-- Status Section -->
-    <div class="grid md:grid-cols-2 gap-6 mb-8">
-      <!-- Scraping Status -->
-      <div class="bg-white rounded-xl shadow-lg p-6 card-hover fade-in" style="animation-delay: 0.2s">
-        <h2 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
-          <i class="fas fa-download text-blue-500 mr-3"></i>
-          Pobieranie danych
-        </h2>
-        <div class="space-y-3">
-          <div class="flex justify-between">
-            <span class="text-gray-600">Status:</span>
-            <span class="font-medium text-green-600 flex items-center">
-              <i class="fas fa-check-circle mr-1"></i>
-              Gotowe
-            </span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-600">Strona:</span>
-            <a href="https://warszawa19115.pl/harmonogramy-wywozu-odpadow" target="_blank" 
-               class="text-blue-500 hover:underline font-medium">
-              warszawa19115.pl
-            </a>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-600">Ostatnie pobranie:</span>
-            <span id="lastFetch" class="font-medium text-gray-800">-</span>
-          </div>
+    <div class="flex flex-col md:flex-row justify-between items-center mb-10 fade-in relative">
+        <div class="text-center md:text-left">
+            <div class="flex items-center gap-4 mb-2 justify-center md:justify-start">
+                <div class="p-3 rounded-full bg-white dark:bg-slate-800 shadow-md text-emerald-600 dark:text-emerald-400">
+                    <i class="fas fa-recycle text-4xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white">Harmonogram Wywozu</h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Warszawa 19115 & Google Calendar</p>
+                </div>
+            </div>
         </div>
-      </div>
-
-      <!-- Calendar Sync -->
-      <div class="bg-white rounded-xl shadow-lg p-6 card-hover fade-in" style="animation-delay: 0.3s">
-        <h2 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
-          <i class="fas fa-calendar-alt text-purple-500 mr-3"></i>
-          Synchronizacja Google
-        </h2>
-        <div class="space-y-3">
-          <div class="flex justify-between">
-            <span class="text-gray-600">Kalendarz:</span>
-            <span class="font-medium text-purple-600">Wywóz Śmieci</span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-600">Status:</span>
-            <span id="syncStatus" class="font-medium flex items-center">
-              <i class="fas fa-sync-alt mr-1 pulse text-purple-500"></i>
-              Oczekiwanie
-            </span>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-gray-600">Wydarzenia dodane:</span>
-            <span id="eventsAdded" class="font-medium text-gray-800">0</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Error Alert -->
-    <div id="errorAlert" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-8 rounded shadow-md fade-in">
-      <div class="flex">
-        <div class="mr-3 text-red-500">
-          <i class="fas fa-exclamation-triangle text-2xl"></i>
-        </div>
-        <div>
-          <h3 class="font-bold">Błąd synchronizacji</h3>
-          <p id="errorMessage" class="text-sm mt-1"></p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Waste Schedule -->
-    <div class="bg-white rounded-xl shadow-lg p-6 mb-8 fade-in" style="animation-delay: 0.4s">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-        <h2 class="text-xl font-semibold text-gray-700 flex items-center">
-          <i class="fas fa-trash-alt text-orange-500 mr-3"></i>
-          Nadchodzące odbiory śmieci
-        </h2>
         
-        <!-- Waste Type Filters -->
-        <div class="mt-3 sm:mt-0 flex flex-wrap justify-center sm:justify-end gap-1" id="wasteFilters">
-          <span class="waste-badge bg-blue-100 text-blue-800 border border-blue-200" onclick="toggleFilter('Papier', this)">Papier</span>
-          <span class="waste-badge bg-yellow-100 text-yellow-800 border border-yellow-200" onclick="toggleFilter('Metale i tworzywa sztuczne', this)">Metale</span>
-          <span class="waste-badge bg-green-100 text-green-800 border border-green-200" onclick="toggleFilter('Szkło', this)">Szkło</span>
-          <span class="waste-badge bg-amber-100 text-amber-800 border border-amber-200" onclick="toggleFilter('Bio', this)">Bio</span>
-          <span class="waste-badge bg-gray-100 text-gray-800 border border-gray-200" onclick="toggleFilter('Zmieszane', this)">Zmieszane</span>
-          <span class="waste-badge bg-lime-100 text-lime-800 border border-lime-200" onclick="toggleFilter('Zielone', this)">Zielone</span>
-          <span class="waste-badge bg-orange-100 text-orange-800 border border-orange-200" onclick="toggleFilter('Gabaryty', this)">Gabaryty</span>
-        </div>
-      </div>
-      
-      <div id="scheduleContainer" class="space-y-4">
-        <!-- Will be filled by JS -->
-        <div class="text-center py-8 text-gray-500">
-          <i class="fas fa-spinner fa-spin text-2xl mb-3"></i>
-          <p>Ładowanie harmonogramu...</p>
-        </div>
-      </div>
+        <!-- Dark Mode Toggle -->
+        <button onclick="toggleDarkMode()" class="mt-4 md:mt-0 p-3 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition group">
+            <i class="fas fa-sun text-yellow-500 text-xl hidden dark:inline group-hover:rotate-90 transition-transform duration-500"></i>
+            <i class="fas fa-moon text-slate-600 text-xl inline dark:hidden group-hover:-rotate-12 transition-transform duration-500"></i>
+        </button>
     </div>
 
-    <!-- Action Buttons -->
-    <div class="bg-white rounded-xl shadow-lg p-6 fade-in" style="animation-delay: 0.5s">
-      <h2 class="text-xl font-semibold text-gray-700 mb-6 flex items-center">
-        <i class="fas fa-cog text-gray-500 mr-3"></i>
-        Akcje
-      </h2>
-      
-      <div class="grid sm:grid-cols-2 gap-4">
-        <button onclick="runScraping()" 
-                class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center">
-          <i class="fas fa-sync mr-2"></i>
-          Uruchom ponownie
-        </button>
+    <div class="grid lg:grid-cols-3 gap-8">
         
-        <button onclick="viewRawData()" 
-                class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center">
-          <i class="fas fa-file-code mr-2"></i>
-          Dane surowe
-        </button>
-      </div>
-      
-      <div class="mt-6 text-sm text-gray-500">
-        <p><strong>Uwaga:</strong> Skrypt działa automatycznie co 24 godziny. Możesz go uruchomić ręcznie za pomocą przycisku powyżej.</p>
-      </div>
+        <!-- Kolumna Lewa: Konfiguracja -->
+        <div class="lg:col-span-1 space-y-6 fade-in" style="animation-delay: 0.1s">
+            
+            <!-- Adres -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700 p-6 card-hover transition-colors duration-300">
+                <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4 flex items-center">
+                    <i class="fas fa-map-marker-alt text-red-500 mr-3"></i> Adres
+                </h2>
+                <input type="text" id="addressInput" 
+                    class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent mb-3 text-gray-800 dark:text-white placeholder-gray-400 transition-colors"
+                    value="Obozowa 90" placeholder="Ulica numer" />
+                <button onclick="saveAddress()" 
+                        class="w-full bg-gray-800 hover:bg-gray-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-medium py-2 rounded-lg transition border border-transparent dark:border-slate-600">
+                    <i class="fas fa-save mr-1"></i> Zapamiętaj adres
+                </button>
+            </div>
+
+            <!-- Konfiguracja Frakcji -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700 p-6 card-hover transition-colors duration-300">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 flex items-center">
+                        <i class="fas fa-sliders-h text-blue-500 mr-3"></i> Filtry
+                    </h2>
+                    <span class="text-xs px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-gray-500 dark:text-gray-400">Automatyczny zapis</span>
+                </div>
+                
+                <div id="syncConfigContainer" class="space-y-2">
+                    <!-- Checkboxy generowane przez JS -->
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700 p-6 card-hover transition-colors duration-300">
+                <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">Status</h2>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-2">
+                        <span class="text-gray-500 dark:text-gray-400">Ostatnia akcja:</span>
+                        <span id="lastFetch" class="font-mono text-gray-800 dark:text-emerald-400">-</span>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-2">
+                        <span class="text-gray-500 dark:text-gray-400">Dodano wydarzeń:</span>
+                        <span id="eventsAdded" class="font-bold text-emerald-600 dark:text-emerald-400">0</span>
+                    </div>
+                    <div class="mt-4 pt-2 text-center" id="syncStatus">
+                        <span class="text-gray-400 dark:text-slate-500 text-xs uppercase tracking-wider">Gotowy do pracy</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Przyciski -->
+             <div class="space-y-3">
+                <button onclick="runScraping()" 
+                        class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-emerald-500/20 transition transform active:scale-[0.98] flex items-center justify-center">
+                    <i class="fas fa-sync-alt mr-2 text-xl"></i> Uruchom Synchronizację
+                </button>
+                
+                <button onclick="viewLogs()" 
+                        class="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 font-medium py-3 px-6 rounded-xl transition flex items-center justify-center">
+                    <i class="fas fa-terminal mr-2"></i> Pokaż Logi
+                </button>
+             </div>
+
+        </div>
+
+        <!-- Kolumna Prawa: Wyniki -->
+        <div class="lg:col-span-2 fade-in" style="animation-delay: 0.2s">
+            
+            <!-- Error Alert -->
+            <div id="errorAlert" class="hidden bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 text-red-700 dark:text-red-400 p-4 mb-6 rounded shadow-sm">
+                <div class="flex">
+                    <div class="mr-3"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div><h3 class="font-bold">Błąd</h3><p id="errorMessage" class="text-sm"></p></div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700 p-8 min-h-[600px] transition-colors duration-300">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                    <h2 class="text-2xl font-bold text-gray-800 dark:text-white flex items-center">
+                        <i class="fas fa-calendar-alt text-emerald-500 mr-3"></i> Znalezione terminy
+                    </h2>
+                    
+                    <div class="text-xs flex gap-3 bg-gray-50 dark:bg-slate-900 p-2 rounded-lg">
+                        <span class="flex items-center text-gray-600 dark:text-gray-300"><i class="fas fa-circle text-emerald-500 text-[10px] mr-1.5"></i> Synchronizowane</span>
+                        <span class="flex items-center text-gray-400 dark:text-gray-500"><i class="fas fa-circle text-gray-300 dark:text-slate-600 text-[10px] mr-1.5"></i> Pominięte</span>
+                    </div>
+                </div>
+                
+                <div id="scheduleContainer" class="space-y-3">
+                    <div class="flex flex-col items-center justify-center py-24 text-gray-400 dark:text-slate-600 opacity-60">
+                        <i class="fas fa-robot text-6xl mb-4"></i>
+                        <p class="text-lg font-medium">Lista jest pusta</p>
+                        <p class="text-sm">Kliknij przycisk, aby pobrać harmonogram</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Raw Data Modal -->
-    <div id="rawModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-96 overflow-hidden">
-        <div class="p-6 border-b border-gray-200 flex justify-between items-center">
-          <h3 class="text-xl font-semibold text-gray-800">Dane surowe</h3>
-          <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
-            <i class="fas fa-times text-2xl"></i>
-          </button>
+    <!-- Modal Logów -->
+    <div id="logsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 transition-opacity">
+        <div class="bg-slate-900 rounded-xl shadow-2xl w-full max-w-6xl h-[85vh] flex flex-col border border-slate-700 overflow-hidden transform transition-all scale-100">
+            <div class="flex justify-between items-center p-4 bg-slate-800 border-b border-slate-700">
+                <h3 class="text-lg font-mono text-emerald-400 flex items-center">
+                    <i class="fas fa-terminal mr-2"></i> Console Output
+                </h3>
+                <div class="flex gap-2">
+                    <button onclick="copyLogs()" class="px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm transition">
+                        <i class="fas fa-copy mr-1"></i> Kopiuj
+                    </button>
+                    <button onclick="closeModal()" class="px-3 py-1.5 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <textarea id="logsContent" readonly 
+                class="w-full h-full bg-[#0d1117] text-slate-300 font-mono text-sm p-6 resize-none focus:outline-none leading-relaxed"
+                spellcheck="false"></textarea>
         </div>
-        <div class="p-6 overflow-y-auto max-h-80">
-          <pre id="rawDataContent" class="text-sm text-gray-800 bg-gray-50 p-4 rounded-lg whitespace-pre-wrap"></pre>
-        </div>
-      </div>
     </div>
+
   </div>
 
-<!-- Tutaj wklej CAŁY swój HTML od <!DOCTYPE html> do końca </div> zamykającego kontener -->
-<!-- ... (twój kod HTML) ... -->
-
-<!-- Podmień CAŁY <script> na dole pliku na ten: -->
   <script>
+    // --- KONFIGURACJA KOLORÓW I IKON ---
     const wasteTypesConfig = {
-      "Papier": { color: "blue", icon: "fas fa-newspaper", synced: true },
-      "Metale i tworzywa sztuczne": { color: "yellow", icon: "fas fa-cube", synced: true },
-      "Szkło": { color: "green", icon: "fas fa-glass-cheers", synced: true },
-      "Bio": { color: "brown", icon: "fas fa-seedling", synced: true },
-      "Zmieszane": { color: "gray", icon: "fas fa-trash", synced: true },
-      "Zielone": { color: "lime", icon: "fas fa-tree", synced: true },
-      "Gabaryty": { color: "orange", icon: "fas fa-couch", synced: true }
+      "Papier": { color: "blue", icon: "fas fa-newspaper" },
+      "Metale i tworzywa sztuczne": { color: "yellow", icon: "fas fa-cube" },
+      "Szkło": { color: "green", icon: "fas fa-glass-cheers" },
+      "Bio": { color: "brown", icon: "fas fa-seedling" },
+      "Zmieszane": { color: "gray", icon: "fas fa-trash" },
+      "Zielone": { color: "lime", icon: "fas fa-tree" },
+      "Gabaryty": { color: "orange", icon: "fas fa-couch" }
     };
 
     const wasteColors = {
-      "Papier": "bg-blue-100 border-blue-200 text-blue-800",
-      "Metale i tworzywa sztuczne": "bg-yellow-100 border-yellow-200 text-yellow-800",
-      "Szkło": "bg-green-100 border-green-200 text-green-800",
-      "Bio": "bg-amber-100 border-amber-200 text-amber-800",
-      "Zmieszane": "bg-gray-100 border-gray-200 text-gray-800",
-      "Zielone": "bg-lime-100 border-lime-200 text-lime-800",
-      "Gabaryty": "bg-orange-100 border-orange-200 text-orange-800"
+      "Papier": "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
+      "Metale i tworzywa sztuczne": "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800",
+      "Szkło": "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800",
+      "Bio": "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800",
+      "Zmieszane": "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600",
+      "Zielone": "bg-lime-100 text-lime-800 border-lime-200 dark:bg-lime-900/30 dark:text-lime-300 dark:border-lime-800",
+      "Gabaryty": "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800"
     };
 
-    const wasteIcons = {
-      "Papier": "fas fa-newspaper",
-      "Metale i tworzywa sztuczne": "fas fa-cube",
-      "Szkło": "fas fa-glass-cheers",
-      "Bio": "fas fa-seedling",
-      "Zmieszane": "fas fa-trash",
-      "Zielone": "fas fa-tree",
-      "Gabaryty": "fas fa-couch"
-    };
+    let currentScheduleData = [];
+    let currentLogs = [];
+    let syncPreferences = {}; 
 
-    let displayPreferences = {};
-    let currentScheduleData = []; // Tutaj będziemy trzymać prawdziwe dane
+    // --- INICJALIZACJA ---
+    document.addEventListener('DOMContentLoaded', () => {
+        initTheme(); // Dark Mode
+        loadAddress();
+        initSyncPreferences();
+        renderSyncConfig();
+        loadLastState(); 
+    });
 
-    function initPreferences() {
-      Object.keys(wasteTypesConfig).forEach(type => {
-        displayPreferences[type] = true;
-      });
-    }
-
-    // Ładowanie ostatniego stanu przy starcie
-    async function loadLastState() {
-        try {
-            const response = await fetch('/api/last-state');
-            const data = await response.json();
-            if(data.schedule && data.schedule.length > 0) {
-                currentScheduleData = data.schedule;
-                renderSchedule();
-                document.getElementById('eventsAdded').textContent = data.added_events || 0;
-            }
-        } catch (e) {
-            console.error("Błąd ładowania stanu:", e);
+    // --- DARK MODE ---
+    function initTheme() {
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
         }
     }
 
+    function toggleDarkMode() {
+        if (document.documentElement.classList.contains('dark')) {
+            document.documentElement.classList.remove('dark');
+            localStorage.theme = 'light';
+        } else {
+            document.documentElement.classList.add('dark');
+            localStorage.theme = 'dark';
+        }
+    }
+
+    // --- PREFERENCJE ---
+    function initSyncPreferences() {
+        const saved = localStorage.getItem('wasteSyncPrefs');
+        if (saved) {
+            syncPreferences = JSON.parse(saved);
+        } else {
+            Object.keys(wasteTypesConfig).forEach(key => syncPreferences[key] = true);
+        }
+        Object.keys(wasteTypesConfig).forEach(key => {
+            if (syncPreferences[key] === undefined) syncPreferences[key] = true;
+        });
+    }
+
+    function renderSyncConfig() {
+        const container = document.getElementById('syncConfigContainer');
+        container.innerHTML = '';
+        Object.keys(wasteTypesConfig).forEach(type => {
+            const isChecked = syncPreferences[type];
+            const div = document.createElement('label');
+            div.className = "flex items-center space-x-3 p-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer transition border border-transparent hover:border-gray-200 dark:hover:border-slate-600 group";
+            div.innerHTML = `
+                <div class="relative flex items-center">
+                    <input type="checkbox" class="peer w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500 border-gray-300 dark:border-slate-500 dark:bg-slate-700 dark:checked:bg-emerald-500" 
+                        ${isChecked ? 'checked' : ''} 
+                        onchange="toggleSyncPref('${type}', this.checked)">
+                </div>
+                <span class="text-sm text-gray-700 dark:text-gray-300 select-none flex-grow group-hover:text-gray-900 dark:group-hover:text-white transition">${type}</span>
+                <i class="${wasteTypesConfig[type].icon} text-gray-300 dark:text-slate-600 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition text-sm"></i>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function toggleSyncPref(type, isChecked) {
+        syncPreferences[type] = isChecked;
+        localStorage.setItem('wasteSyncPrefs', JSON.stringify(syncPreferences));
+        // Po zmianie checkboxa przortuj listę od nowa
+        if (currentScheduleData.length > 0) renderSchedule();
+    }
+
+    // --- ADRES ---
+    function loadAddress() {
+        const saved = localStorage.getItem('wasteAddress');
+        if(saved) document.getElementById('addressInput').value = saved;
+    }
+    
     function saveAddress() {
-      const addressInput = document.getElementById('addressInput');
-      if (addressInput.value.trim() === '') {
-        alert('Proszę wpisać adres!');
-        return;
-      }
-      localStorage.setItem('wasteAddress', addressInput.value); // Zapisz w przeglądarce
-      alert(`Adres zapisany lokalnie: ${addressInput.value}`);
+        const val = document.getElementById('addressInput').value;
+        if(val) {
+            localStorage.setItem('wasteAddress', val);
+            const btn = document.querySelector('button[onclick="saveAddress()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check mr-1"></i> Zapisano';
+            btn.classList.add('bg-emerald-600');
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove('bg-emerald-600');
+            }, 2000);
+        }
     }
 
-    function getCurrentDate() {
-      const now = new Date();
-      return now.toLocaleDateString('pl-PL', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    // --- KOMUNIKACJA ---
+    async function loadLastState() {
+        try {
+            const resp = await fetch('/api/last-state');
+            const data = await resp.json();
+            
+            // Przywracanie czasu ostatniej akcji
+            if (data.timestamp) {
+                document.getElementById('lastFetch').textContent = data.timestamp;
+            }
+
+            if(data.schedule) {
+                currentScheduleData = data.schedule;
+                currentLogs = data.logs || [];
+                document.getElementById('eventsAdded').textContent = data.added_events || 0;
+                renderSchedule();
+            }
+        } catch(e) {}
     }
 
-    function toggleFilter(type, element) {
-      displayPreferences[type] = !displayPreferences[type];
-      element.classList.toggle('opacity-50');
-      renderSchedule();
+    async function runScraping() {
+        const statusEl = document.getElementById('syncStatus');
+        const alertEl = document.getElementById('errorAlert');
+        const address = document.getElementById('addressInput').value;
+
+        if(!address) { alert("Wpisz adres!"); return; }
+
+        statusEl.innerHTML = '<div class="flex flex-col items-center animate-pulse"><span class="text-emerald-600 dark:text-emerald-400 font-bold mb-1">Przetwarzanie...</span><span class="text-[10px] text-gray-400">Proszę nie zamykać karty</span></div>';
+        alertEl.classList.add('hidden');
+
+        const allowedTypes = Object.keys(syncPreferences).filter(key => syncPreferences[key]);
+
+        try {
+            const response = await fetch('/api/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ address: address, allowedTypes: allowedTypes })
+            });
+            const data = await response.json();
+
+            if (data.status === 'success' || (data.schedule && data.schedule.length > 0)) {
+                currentScheduleData = data.schedule;
+                currentLogs = data.logs;
+                document.getElementById('eventsAdded').textContent = data.added_events;
+                
+                // Aktualizacja czasu na UI
+                if (data.timestamp) {
+                    document.getElementById('lastFetch').textContent = data.timestamp;
+                }
+                
+                statusEl.innerHTML = '<span class="text-emerald-600 dark:text-emerald-400 font-bold text-sm"><i class="fas fa-check-circle"></i> Gotowe</span>';
+                renderSchedule();
+            } else {
+                throw new Error(data.message || "Błąd pobierania");
+            }
+        } catch (error) {
+            statusEl.innerHTML = '<span class="text-red-500 font-bold text-sm">Przerwano</span>';
+            document.getElementById('errorMessage').textContent = error.message;
+            alertEl.classList.remove('hidden');
+        }
     }
 
+    // --- LOGIKA SORTOWANIA I RENDEROWANIA ---
     function renderSchedule() {
-      const container = document.getElementById('scheduleContainer');
-      container.innerHTML = '';
+        const container = document.getElementById('scheduleContainer');
+        container.innerHTML = '';
 
-      const filteredData = currentScheduleData.filter(item => displayPreferences[item.wasteType]);
-      
-      if (filteredData.length === 0) {
-        container.innerHTML = '<div class="text-center py-8 text-gray-500"><i class="fas fa-filter text-2xl mb-3"></i><p>Brak danych (lub brak pobranych terminów)</p></div>';
-        return;
-      }
+        if (!currentScheduleData || currentScheduleData.length === 0) {
+            container.innerHTML = '<div class="flex flex-col items-center justify-center py-24 text-gray-400 dark:text-slate-600 opacity-60"><i class="fas fa-robot text-6xl mb-4"></i><p class="text-lg">Brak danych</p></div>';
+            return;
+        }
 
-      // Sortowanie po dacie (Parsowanie polskiej daty)
-      filteredData.sort((a, b) => {
-        const dateA = parsePolishDate(a.dateText);
-        const dateB = parsePolishDate(b.dateText);
-        return dateA - dateB;
-      });
+        // --- ALGORYTM SORTOWANIA ---
+        // 1. Najpierw te, które są włączone do synchronizacji (isSynced = true)
+        // 2. Wewnątrz grup: chronologicznie po dacie
+        const sorted = [...currentScheduleData].sort((a, b) => {
+            const isSyncedA = syncPreferences[a.wasteType];
+            const isSyncedB = syncPreferences[b.wasteType];
 
-      filteredData.forEach(item => {
-        const isSynced = true; // Zakładamy sukces jeśli są w bazie
-        const card = document.createElement('div');
-        card.className = `border-l-4 rounded-r-lg p-4 bg-gray-50 border-l-emerald-500 flex items-center justify-between fade-in`;
-        card.innerHTML = `
-          <div class="flex items-center">
-            <div class="text-2xl mr-4 text-gray-600">
-              <i class="${wasteIcons[item.wasteType] || 'fas fa-trash'}"></i>
-            </div>
-            <div>
-              <h3 class="font-semibold text-gray-800">${item.wasteType}</h3>
-              <p class="text-sm text-gray-600">${item.dateText}</p>
-            </div>
-          </div>
-          <div class="text-right">
-             <span class="inline-block px-3 py-1 text-xs font-medium rounded-full ${wasteColors[item.wasteType] || 'bg-gray-200'}">
-              ${item.dateText}
-            </span>
-          </div>
-        `;
-        container.appendChild(card);
-      });
+            if (isSyncedA && !isSyncedB) return -1; // A idzie na górę
+            if (!isSyncedA && isSyncedB) return 1;  // B idzie na górę
+            
+            // Jeśli oba są takie same (oba sync lub oba nie-sync), sortuj po dacie
+            return parsePolishDate(a.dateText) - parsePolishDate(b.dateText);
+        });
+
+        sorted.forEach((item, index) => {
+            const isSynced = syncPreferences[item.wasteType];
+            
+            const div = document.createElement('div');
+            // Style dla aktywnych vs nieaktywnych
+            const baseClass = "flex items-center justify-between p-4 rounded-xl border-l-[6px] shadow-sm transition-all duration-300 fade-in mb-3";
+            const activeStyle = "bg-white dark:bg-slate-700/50 border-emerald-500 hover:shadow-md hover:translate-x-1";
+            const inactiveStyle = "bg-gray-50 dark:bg-slate-800/50 border-gray-300 dark:border-slate-600 opacity-60 grayscale-[0.8]";
+
+            div.className = `${baseClass} ${isSynced ? activeStyle : inactiveStyle}`;
+            div.style.animationDelay = `${index * 0.05}s`; // Kaskadowe pojawianie się
+
+            div.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center bg-gray-100 dark:bg-slate-800 text-xl ${isSynced ? 'text-gray-700 dark:text-white' : 'text-gray-400'}">
+                        <i class="${wasteTypesConfig[item.wasteType]?.icon || 'fas fa-trash'}"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-800 dark:text-gray-100 text-lg">${item.wasteType}</h4>
+                        <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                            <i class="far fa-calendar mr-2 opacity-70"></i>
+                            ${item.dateText}
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col items-end gap-2">
+                    <span class="text-xs px-3 py-1 rounded-full border font-medium ${wasteColors[item.wasteType]}">
+                        ${item.dateText.split(' ')[0]}
+                    </span>
+                    ${isSynced 
+                        ? '<span class="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 tracking-wider flex items-center"><i class="fas fa-check mr-1"></i>Sync</span>' 
+                        : '<span class="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider flex items-center"><i class="fas fa-ban mr-1"></i>Ominięto</span>'
+                    }
+                </div>
+            `;
+            container.appendChild(div);
+        });
     }
 
     function parsePolishDate(dateText) {
-      const months = {
-        'stycznia': 0, 'lutego': 1, 'marca': 2, 'kwietnia': 3, 'maja': 4, 'czerwca': 5,
-        'lipca': 6, 'sierpnia': 7, 'września': 8, 'października': 9, 'listopada': 10, 'grudnia': 11,
-        'styczeń': 0, 'luty': 1, 'marzec': 2, 'kwiecień': 3, 'maj': 4, 'czerwiec': 5,
-        'lipiec': 6, 'sierpień': 7, 'wrzesień': 8, 'październik': 9, 'listopad': 10, 'grudzień': 11
-      };
-      const parts = dateText.toLowerCase().split(' ');
-      if (parts.length >= 2) {
+        const parts = dateText.split(' ');
         const day = parseInt(parts[0]);
-        const month = months[parts[1]];
-        if (!isNaN(day) && month !== undefined) {
-          let year = new Date().getFullYear();
-          // Logika przełomu roku
-          if (new Date().getMonth() >= 10 && month <= 1) year++;
-          return new Date(year, month, day);
-        }
-      }
-      return new Date(); // Fallback
+        const months = {'stycznia':0,'lutego':1,'marca':2,'kwietnia':3,'maja':4,'czerwca':5,'lipca':6,'sierpnia':7,'września':8,'października':9,'listopada':10,'grudnia':11};
+        const month = months[parts[1].toLowerCase()] || 0;
+        let year = new Date().getFullYear();
+        if(new Date().getMonth() > 9 && month < 2) year++;
+        return new Date(year, month, day);
     }
 
-    // --- LOGIKA BACKENDU ---
-    async function runScraping() {
-      const syncStatus = document.getElementById('syncStatus');
-      const eventsAdded = document.getElementById('eventsAdded');
-      const errorAlert = document.getElementById('errorAlert');
-      const addressInput = document.getElementById('addressInput');
-      
-      errorAlert.classList.add('hidden');
-      syncStatus.innerHTML = '<i class="fas fa-sync-alt mr-1 animate-spin text-purple-500"></i> Przetwarzanie... (może to potrwać 30s)';
-      
-      try {
-        // Wysyłamy żądanie do naszego pliku app.py
-        const response = await fetch('/api/sync', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ address: addressInput.value })
-        });
-        
-        const data = await response.json();
-        
-        if (data.status === 'success' || data.schedule.length > 0) {
-            syncStatus.innerHTML = '<i class="fas fa-check-circle mr-1 text-green-500"></i> Zakończono';
-            eventsAdded.textContent = data.added_events;
-            document.getElementById('lastFetch').textContent = getCurrentDate();
-            
-            // Aktualizacja tabeli
-            currentScheduleData = data.schedule;
-            renderSchedule();
-            
-            alert(`Sukces! Znaleziono ${data.schedule.length} terminów. Dodano do kalendarza: ${data.added_events}.`);
-        } else {
-            throw new Error(data.message || "Nieznany błąd");
-        }
-
-      } catch (error) {
-        syncStatus.innerHTML = '<i class="fas fa-times-circle mr-1 text-red-500"></i> Błąd';
-        document.getElementById('errorMessage').textContent = error.message;
-        errorAlert.classList.remove('hidden');
-      }
+    // --- MODAL ---
+    function viewLogs() {
+        const modal = document.getElementById('logsModal');
+        const textarea = document.getElementById('logsContent');
+        textarea.value = (currentLogs && currentLogs.length > 0) ? currentLogs.join('\n') : "Brak logów.";
+        modal.classList.remove('hidden');
     }
 
-    function viewRawData() {
-      const modal = document.getElementById('rawModal');
-      const content = document.getElementById('rawDataContent');
-      content.textContent = JSON.stringify(currentScheduleData, null, 2);
-      modal.classList.remove('hidden');
+    function copyLogs() {
+        document.getElementById('logsContent').select();
+        document.execCommand('copy');
     }
 
     function closeModal() {
-      document.getElementById('rawModal').classList.add('hidden');
+        document.getElementById('logsModal').classList.add('hidden');
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      initPreferences();
-      // Przywróć adres z pamięci przeglądarki
-      const savedAddress = localStorage.getItem('wasteAddress');
-      if(savedAddress) document.getElementById('addressInput').value = savedAddress;
-      
-      loadLastState(); // Załaduj dane z pliku json jeśli istnieją
-    });
-
-    document.addEventListener('click', (e) => {
-      const modal = document.getElementById('rawModal');
-      if (e.target === modal) modal.classList.add('hidden');
+    document.getElementById('logsModal').addEventListener('click', (e) => {
+        if(e.target.id === 'logsModal') closeModal();
     });
   </script>
 </body>
 </html>
-

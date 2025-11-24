@@ -73,9 +73,9 @@ def get_google_service():
             pickle.dump(creds, token)
     return build('calendar', 'v3', credentials=creds)
 
-# --- SCRAPER (Zmodyfikowany, aby przyjmował adres) ---
+# --- SCRAPER ---
 
-def run_full_process(address):
+def run_full_process(address, allowed_types):
     results = {
         "status": "success",
         "logs": [],
@@ -84,12 +84,17 @@ def run_full_process(address):
     }
 
     def log(msg):
-        print(msg)
-        results["logs"].append(msg)
+        timestamp = datetime.datetime.now().strftime("%H:%M:%S")
+        formatted_msg = f"[{timestamp}] {msg}"
+        print(formatted_msg)
+        results["logs"].append(formatted_msg)
 
-    log(f"Rozpoczynam pobieranie dla: {address}")
+    log(f"--- START ---")
+    log(f"Adres: {address}")
+    log(f"Frakcje do synchronizacji: {', '.join(allowed_types)}")
     
     # 1. Scraping
+    log("Inicjalizacja przeglądarki...")
     chrome_options = Options()
     chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--window-size=1920,1080")
@@ -98,7 +103,7 @@ def run_full_process(address):
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
     
-    schedule_data = [] # Lista tupli (data_text, typ)
+    schedule_data = [] 
     
     try:
         driver.get(TARGET_URL)
@@ -109,6 +114,7 @@ def run_full_process(address):
             consent.click()
         except: pass
 
+        log("Wyszukiwanie adresu...")
         input_el = wait.until(EC.element_to_be_clickable((By.ID, "addressAutoComplete")))
         driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", input_el)
         input_el.clear()
@@ -118,10 +124,11 @@ def run_full_process(address):
         try:
             suggestion = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "li.yui3-aclist-item")))
             suggestion.click()
+            log("Wybrano adres z listy podpowiedzi.")
         except:
-            log("Nie znaleziono adresu w podpowiedziach!")
+            log("BŁĄD: Nie znaleziono adresu w podpowiedziach!")
             driver.quit()
-            return {"status": "error", "message": "Nie znaleziono adresu"}
+            return {"status": "error", "message": "Nie znaleziono adresu", "logs": results["logs"]}
 
         wait.until(EC.element_to_be_clickable((By.ID, "buttonNext"))).click()
         time.sleep(2)
@@ -132,6 +139,7 @@ def run_full_process(address):
             "bio-date": "Bio", "bulky-date": "Gabaryty", "green-date": "Zielone"
         }
 
+        log("Pobieranie dat ze strony...")
         for html_id, waste_name in element_ids.items():
             try:
                 el = driver.find_element(By.ID, html_id)
@@ -139,25 +147,26 @@ def run_full_process(address):
                 if text:
                     schedule_data.append((text, waste_name))
                     results["schedule"].append({"dateText": text, "wasteType": waste_name})
+                    log(f" -> Znaleziono: {waste_name} ({text})")
             except: pass
 
     except Exception as e:
-        log(f"Błąd Selenium: {str(e)}")
+        log(f"BŁĄD Selenium: {str(e)}")
         driver.quit()
-        return {"status": "error", "message": str(e)}
+        return {"status": "error", "message": str(e), "logs": results["logs"]}
     
     driver.quit()
 
     if not schedule_data:
-        log("Nie pobrano żadnych dat.")
+        log("Ostrzeżenie: Nie pobrano żadnych dat ze strony.")
         return results
 
     # 2. Google Calendar
-    log("Łączenie z Google Calendar...")
+    log("Łączenie z Google Calendar API...")
     try:
         service_google = get_google_service()
         if not service_google:
-            log("Błąd autoryzacji Google (brak credentials.json?)")
+            log("BŁĄD: Brak autoryzacji Google (sprawdź credentials.json)")
             return results
 
         calendar_id = None
@@ -173,6 +182,7 @@ def run_full_process(address):
             if not page_token: break
         
         if not calendar_id:
+            log(f"Tworzenie nowego kalendarza: {CALENDAR_NAME}")
             new_cal = {'summary': CALENDAR_NAME, 'timeZone': 'Europe/Warsaw'}
             created_cal = service_google.calendars().insert(body=new_cal).execute()
             calendar_id = created_cal['id']
@@ -182,7 +192,14 @@ def run_full_process(address):
         existing_events = events_result.get('items', [])
 
         count_added = 0
+        log("Przetwarzanie wydarzeń...")
+        
         for date_text, waste_type in schedule_data:
+            # FILTROWANIE PO WYBRANYCH FRAKCJACH
+            if waste_type not in allowed_types:
+                log(f" -> Pominięto: {waste_type} (wyłączone w opcjach)")
+                continue
+
             event_date = parse_polish_date(date_text)
             if not event_date: continue
             
@@ -206,13 +223,16 @@ def run_full_process(address):
                     'reminders': {'useDefault': False, 'overrides': [{'method': 'popup', 'minutes': 5 * 60}]}
                 }
                 service_google.events().insert(calendarId=calendar_id, body=event_body).execute()
+                log(f" -> DODANO DO KALENDARZA: {waste_type} ({event_date_str})")
                 count_added += 1
+            else:
+                log(f" -> Już istnieje: {waste_type} ({event_date_str})")
 
         results["added_events"] = count_added
-        log(f"Dodano {count_added} nowych wydarzeń.")
+        log(f"Zakończono. Dodano {count_added} nowych wydarzeń.")
 
     except Exception as e:
-        log(f"Błąd Google API: {str(e)}")
+        log(f"BŁĄD Google API: {str(e)}")
         results["status"] = "partial_error"
         results["message"] = str(e)
 
@@ -228,23 +248,32 @@ def home():
 def api_sync():
     data = request.json
     address = data.get('address', "Obozowa 90")
+    # Pobieramy listę dozwolonych frakcji z frontendu
+    # Jeśli frontend nie wyśle, domyślnie bierzemy wszystkie
+    allowed_types = data.get('allowedTypes', list(WASTE_COLORS.keys()))
     
-    result = run_full_process(address)
+    result = run_full_process(address, allowed_types)
+
+    # --- ZMIANA: Dodajemy timestamp do głównego obiektu wyniku ---
+    result['timestamp'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
-    # Zapiszmy ostatni stan do pliku JSON dla frontendu
-    with open('last_state.json', 'w', encoding='utf-8') as f:
-        json.dump(result, f, ensure_ascii=False)
+    # Zapis stanu
+    try:
+        with open('last_state.json', 'w', encoding='utf-8') as f:
+            json.dump(result, f, ensure_ascii=False)
+    except: pass
         
     return jsonify(result)
 
 @app.route('/api/last-state', methods=['GET'])
 def last_state():
     if os.path.exists('last_state.json'):
-        with open('last_state.json', 'r', encoding='utf-8') as f:
-            return jsonify(json.load(f))
-    return jsonify({"schedule": []})
+        try:
+            with open('last_state.json', 'r', encoding='utf-8') as f:
+                return jsonify(json.load(f))
+        except: pass
+    return jsonify({"schedule": [], "logs": []})
 
 if __name__ == '__main__':
-    # Uruchamiamy serwer Flask
     print("Serwer działa na http://127.0.0.1:5000")
     app.run(debug=True, port=5000)
