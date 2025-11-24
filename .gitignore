@@ -1,4 +1,6 @@
 harmonogram.txt
+credentials.json
+token.pickle
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

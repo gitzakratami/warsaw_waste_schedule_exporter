@@ -1,3 +1,6 @@
 selenium==4.38.0
 webdriver-manager==4.0.2
 pdfplumber==0.11.8
+google-auth
+google-auth-oauthlib
+google-api-python-client
