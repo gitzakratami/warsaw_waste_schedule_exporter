@@ -1,7 +1,5 @@
 import os
 import time
-from datetime import datetime
-import re
 
 # Selenium - do automatyzacji przeglądarki
 from selenium import webdriver
@@ -11,63 +9,47 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import ElementNotInteractableException
-from selenium.webdriver.common.keys import Keys
 from webdriver_manager.chrome import ChromeDriverManager
 
 # --- KONFIGURACJA ---
-# Adres, dla którego chcesz pobrać harmonogram
 ADDRESS_TO_SEARCH = "Obozowa 90"
 TARGET_URL = "https://warszawa19115.pl/harmonogramy-wywozu-odpadow"
 
 # Flagi działania
-HEADLESS = False  # ustaw True jeśli chcesz z powrotem tryb bez okna
-CLICK_COOKIES = True  # spróbuj kliknąć baner cookies jeśli występuje
-ACTION_DELAY = 0.5  # sekundy pauzy między kluczowymi akcjami (spowolnienie klików)
+HEADLESS = False       # True = brak okna przeglądarki
+CLICK_COOKIES = True   # True = próba zamknięcia baneru cookies
+ACTION_DELAY = 0.1     # Opóźnienie dla "ludzkości" interakcji
 
-# Nazwy plików
+# Nazwa pliku wyjściowego
 OUTPUT_FILENAME = "harmonogram.txt"
 
-def download_schedule_pdf():
+def fetch_waste_schedule():
     """
-    Automatyzuje proces wejścia na stronę, wpisania adresu i pobrania pliku PDF.
+    Uruchamia przeglądarkę, wpisuje adres i pobiera daty wywozu bezpośrednio z HTML.
     """
-    print("Krok 1: Pobieranie harmonogramu w formacie PDF...")
+    print("Krok 1: Pobieranie danych ze strony WWW...")
+
     def slow_sleep(label=""):
         if label:
-            print(f"   (pauza {ACTION_DELAY}s: {label})")
+            # Opcjonalnie: print(f"   (pauza: {label})")
+            pass
         time.sleep(ACTION_DELAY)
 
     def accept_cookies(driver, wait):
         if not CLICK_COOKIES:
             return
         try:
+            # Najpierw próba standardowego przycisku
             try:
-                consent_btn = WebDriverWait(driver, 5).until(
+                consent_btn = WebDriverWait(driver, 4).until(
                     EC.element_to_be_clickable((By.XPATH, "//button[.//span[text()='Zgoda na wszystkie']]|//span[text()='Zgoda na wszystkie']/ancestor::button"))
                 )
                 consent_btn.click()
-                print(" - Kliknięto 'Zgoda na wszystkie'")
                 slow_sleep("po zgodzie cookies")
                 return
             except Exception:
-                cookie_xpaths = [
-                    "//button[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŻŹ', 'abcdefghijklmnopqrstuvwxyząćęłńóśżź'),'zgoda na wszystkie')]",
-                    "//button[contains(.,'Zgoda na wszystkie')]",
-                    "//button[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZĄĆĘŁŃÓŚŻŹ', 'abcdefghijklmnopqrstuvwxyząćęłńóśżź'),'akceptuj')]",
-                    "//button[contains(.,'Akceptuj') or contains(.,'ZGADZAM') or contains(.,'Accept')]",
-                    "//div[contains(@class,'cookie')]//button"
-                ]
-                for cx in cookie_xpaths:
-                    buttons = driver.find_elements(By.XPATH, cx)
-                    if buttons:
-                        try:
-                            buttons[0].click()
-                            print(" - Kliknięto przycisk cookies")
-                        except Exception:
-                            driver.execute_script("arguments[0].click();", buttons[0])
-                            print(" - Kliknięto przycisk cookies (JS)")
-                        slow_sleep("po cookies")
-                        break
+                pass
+
         except Exception as e:
             print(f" - Nie kliknięto cookies (ignoruję): {e}")
 
@@ -78,6 +60,7 @@ def download_schedule_pdf():
             address_input.clear()
             address_input.send_keys(ADDRESS_TO_SEARCH)
         except ElementNotInteractableException:
+            # Fallback JS jeśli element jest zasłonięty
             driver.execute_script(
                 "arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input'));",
                 address_input,
@@ -85,15 +68,12 @@ def download_schedule_pdf():
             )
         print(f" - Wpisano adres: {ADDRESS_TO_SEARCH}")
         slow_sleep("po wpisaniu adresu")
-        try:
-            WebDriverWait(driver, 10).until(lambda d: (address_input.get_attribute("value") or "").strip().upper().startswith(ADDRESS_TO_SEARCH.split()[0]))
-        except Exception:
-            pass
         return address_input
 
-    def choose_suggestion(driver, wait, address_input):
+    def choose_suggestion(driver, wait):
         suggestions = wait.until(EC.visibility_of_all_elements_located((By.CSS_SELECTOR, "li.yui3-aclist-item")))
-        slow_sleep("lista sugestii załadowana")
+        
+        # Prosta logika wyboru najlepszego dopasowania
         chosen = None
         target_upper = ADDRESS_TO_SEARCH.upper()
         for s in suggestions:
@@ -102,13 +82,15 @@ def download_schedule_pdf():
             if text_upper.startswith(target_upper) or data_text.startswith(target_upper):
                 chosen = s
                 break
+        
         if not chosen:
-            chosen = suggestions[0]
+            chosen = suggestions[0] # Bierzemy pierwszy jeśli brak idealnego dopasowania
+
         try:
             chosen.click()
         except Exception:
             driver.execute_script("arguments[0].click();", chosen)
-        print(" - Wybrano sugestię adresu")
+        print(" - Wybrano sugestię z listy")
 
     def go_next(driver, wait):
         next_button = wait.until(EC.element_to_be_clickable((By.ID, "buttonNext")))
@@ -116,102 +98,104 @@ def download_schedule_pdf():
         print(" - Kliknięto 'Dalej'")
         slow_sleep("po 'Dalej'")
 
-    def scrape_schedule_from_page(driver, wait):
-        """Czyta daty wywozu bezpośrednio z HTML strony."""
-        print(" - Czytam daty z HTML...")
-        slow_sleep("ładowanie strony z datami")
+    def scrape_html_data(driver):
+        """Czyta daty wywozu bezpośrednio z elementów HTML."""
+        print(" - Analiza wyników na stronie...")
         
-        # Mapowanie ID divów na nazwy frakcji
+        # Identyfikatory elementów na stronie 19115
         date_divs = {
             "paper-date": "Papier",
             "mixed-date": "Zmieszane",
             "metals-date": "Metale i tworzywa sztuczne",
             "glass-date": "Szkło",
-            "bio-date": "Bio"
+            "bio-date": "Bio",
+            # "bulky-date": "Gabaryty", # Opcjonalnie, jeśli istnieje
+            # "green-date": "Zielone"   # Opcjonalnie
         }
         
-        schedule_data = []
+        data = []
         for div_id, waste_type in date_divs.items():
             try:
-                date_element = driver.find_element(By.ID, div_id)
-                date_text = date_element.text.strip()
-                if date_text:
-                    schedule_data.append((date_text, waste_type))
-                    print(f"   {waste_type}: {date_text}")
-            except Exception as e:
-                print(f"   Brak daty dla {waste_type} (ID: {div_id})")
+                # Szukamy elementu po ID
+                element = driver.find_element(By.ID, div_id)
+                text_val = element.text.strip()
+                if text_val:
+                    data.append((text_val, waste_type))
+                    print(f"   -> Znaleziono: {waste_type} ({text_val})")
+            except Exception:
+                # Element może nie istnieć dla danego adresu/czasu
+                pass
         
-        return schedule_data
+        return data
 
-    # Konfiguracja opcji przeglądarki Chrome
+    # --- Start sterownika Chrome ---
     chrome_options = Options()
     if HEADLESS:
         chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--window-size=1920,1080")
+    # Tłumienie logów Selenium w konsoli
+    chrome_options.add_argument("--log-level=3")
 
-    # Automatyczne zarządzanie sterownikiem przeglądarki
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
 
     try:
         driver.get(TARGET_URL)
-        wait = WebDriverWait(driver, 25)  # Czekaj maksymalnie 25 sekund na elementy
-        accept_cookies(driver, wait)
-        address_input = enter_address(driver, wait)
-        choose_suggestion(driver, wait, address_input)
-        go_next(driver, wait)
-        schedule_data = scrape_schedule_from_page(driver, wait)
-        return schedule_data
-    finally:
-        driver.quit()  # Zawsze zamykaj przeglądarkę
+        wait = WebDriverWait(driver, 25)
 
+        accept_cookies(driver, wait)
+        enter_address(driver, wait)
+        choose_suggestion(driver, wait)
+        go_next(driver, wait)
+        
+        # Poczekaj chwilę na przeładowanie treści po kliknięciu Dalej
+        time.sleep(1.5) 
+        
+        return scrape_html_data(driver)
+
+    except Exception as e:
+        print(f"[BŁĄD Selenium] {e}")
+        return []
+    finally:
+        driver.quit()
 
 
 def save_schedule_to_file(schedule_data):
     """
     Zapisuje zebrane dane do pliku tekstowego.
-    schedule_data: lista tupli (date_text, waste_type) np. [("4 Grudnia", "Papier"), ...]
     """
-    print("\nKrok 2: Zapisywanie harmonogramu do pliku...")
+    print("\nKrok 2: Zapis do pliku...")
 
     if not schedule_data:
-        print(" - Nie znaleziono żadnych terminów do zapisania.")
+        print(" - Pusta lista danych, nic nie zapisano.")
         return
 
     with open(OUTPUT_FILENAME, "w", encoding="utf-8") as f:
-        f.write(f"{ADDRESS_TO_SEARCH}\n\n")
+        f.write(f"Harmonogram dla: {ADDRESS_TO_SEARCH}\n")
+        f.write(f"Wygenerowano: {time.strftime('%Y-%m-%d %H:%M')}\n")
+        f.write("-" * 40 + "\n")
+        
         for date_text, waste_type in schedule_data:
-            line = f"{date_text} - {waste_type}\n"
-            f.write(line)
+            f.write(f"{date_text} : {waste_type}\n")
     
-    print(f" - Harmonogram został zapisany w pliku: {OUTPUT_FILENAME}")
+    print(f" - Sukces! Dane w pliku: {OUTPUT_FILENAME}")
 
 
 def main():
-    """
-    Główna funkcja sterująca całym procesem.
-    """
-    print("--- Start: Automat do pobierania harmonogramu wywozu odpadów ---")
+    print("--- Start: Automat Warszawa 19115 (HTML Scraper) ---")
 
-    # Usuń stary plik TXT, jeśli istnieje, aby zacząć na czysto
+    # Sprzątanie starego pliku
     if os.path.exists(OUTPUT_FILENAME):
         os.remove(OUTPUT_FILENAME)
         
-    try:
-        # Krok 1: Pobieranie i przetwarzanie
-        schedule_data = download_schedule_pdf()
-        
-        # Krok 2: Zapis
-        if schedule_data:
-            save_schedule_to_file(schedule_data)
-        else:
-            print(" - Nie udało się pobrać danych harmonogramu.")
+    schedule = fetch_waste_schedule()
+    
+    if schedule:
+        save_schedule_to_file(schedule)
+    else:
+        print(" - Nie udało się pobrać harmonogramu.")
 
-    except Exception as e:
-        print(f"\n[BŁĄD] Wystąpił nieoczekiwany problem: {e}")
-        print("Sprawdź swoje połączenie z internetem lub czy strona 19115 nie uległa zmianie.")
-
-    print("\n--- Zakończono pracę ---")
+    print("\n--- Koniec ---")
 
 
 if __name__ == "__main__":
