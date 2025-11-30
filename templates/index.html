@@ -7,32 +7,22 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   
-  <!-- Konfiguracja Tailwind dla Dark Mode -->
   <script>
     tailwind.config = {
       darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Poppins', 'sans-serif'] }
-        }
-      }
+      theme: { extend: { fontFamily: { sans: ['Poppins', 'sans-serif'] } } }
     }
   </script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-    
     .fade-in { animation: fadeIn 0.6s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    
     .card-hover:hover { transform: translateY(-3px); transition: all 0.3s ease; }
-    
-    /* Pasek przewijania */
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     .dark ::-webkit-scrollbar-thumb { background: #475569; }
-    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   </style>
 </head>
 <body class="bg-gradient-to-br from-slate-100 via-gray-100 to-zinc-100 dark:from-slate-950 dark:via-slate-900 dark:to-black min-h-screen text-gray-800 dark:text-gray-100 transition-colors duration-300">
@@ -53,7 +43,6 @@
             </div>
         </div>
         
-        <!-- Dark Mode Toggle -->
         <button onclick="toggleDarkMode()" class="mt-4 md:mt-0 p-3 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition group">
             <i class="fas fa-sun text-yellow-500 text-xl hidden dark:inline group-hover:rotate-90 transition-transform duration-500"></i>
             <i class="fas fa-moon text-slate-600 text-xl inline dark:hidden group-hover:-rotate-12 transition-transform duration-500"></i>
@@ -62,9 +51,27 @@
 
     <div class="grid lg:grid-cols-3 gap-8">
         
-        <!-- Kolumna Lewa: Konfiguracja -->
+        <!-- Lewa kolumna -->
         <div class="lg:col-span-1 space-y-6 fade-in" style="animation-delay: 0.1s">
             
+            <!-- NOWE: Sekcja Automatu -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700 p-6 card-hover transition-colors duration-300">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 flex items-center">
+                        <i class="fas fa-robot text-purple-500 mr-3"></i> Automat
+                    </h2>
+                    <!-- Toggle Switch -->
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="autoModeToggle" class="sr-only peer" onchange="toggleAutoMode()">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                    </label>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                    Uruchamiaj pobieranie automatycznie dzień po każdym odbiorze śmieci.
+                </p>
+                <div id="autoStatusText" class="text-xs font-bold mt-2 text-gray-400 uppercase tracking-wide">WYŁĄCZONY</div>
+            </div>
+
             <!-- Adres -->
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700 p-6 card-hover transition-colors duration-300">
                 <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4 flex items-center">
@@ -72,25 +79,21 @@
                 </h2>
                 <input type="text" id="addressInput" 
                     class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent mb-3 text-gray-800 dark:text-white placeholder-gray-400 transition-colors"
-                    value="Obozowa 90" placeholder="Ulica numer" />
+                    value="Marszałkowska 1" />
                 <button onclick="saveAddress()" 
                         class="w-full bg-gray-800 hover:bg-gray-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-medium py-2 rounded-lg transition border border-transparent dark:border-slate-600">
                     <i class="fas fa-save mr-1"></i> Zapamiętaj adres
                 </button>
             </div>
 
-            <!-- Konfiguracja Frakcji -->
+            <!-- Filtry -->
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700 p-6 card-hover transition-colors duration-300">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 flex items-center">
                         <i class="fas fa-sliders-h text-blue-500 mr-3"></i> Filtry
                     </h2>
-                    <span class="text-xs px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-gray-500 dark:text-gray-400">Automatyczny zapis</span>
                 </div>
-                
-                <div id="syncConfigContainer" class="space-y-2">
-                    <!-- Checkboxy generowane przez JS -->
-                </div>
+                <div id="syncConfigContainer" class="space-y-2"></div>
             </div>
 
             <!-- Status -->
@@ -111,25 +114,30 @@
                 </div>
             </div>
 
-            <!-- Przyciski -->
              <div class="space-y-3">
                 <button onclick="runScraping()" 
                         class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-emerald-500/20 transition transform active:scale-[0.98] flex items-center justify-center">
-                    <i class="fas fa-sync-alt mr-2 text-xl"></i> Uruchom Synchronizację
+                    <i class="fas fa-sync-alt mr-2 text-xl"></i> Uruchom Ręcznie
                 </button>
                 
-                <button onclick="viewLogs()" 
-                        class="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 font-medium py-3 px-6 rounded-xl transition flex items-center justify-center">
-                    <i class="fas fa-terminal mr-2"></i> Pokaż Logi
-                </button>
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="pdfBtn" onclick="openPdf()" disabled
+                            class="bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 text-gray-400 dark:text-slate-500 cursor-not-allowed font-medium py-3 px-4 rounded-xl transition flex items-center justify-center">
+                        <i class="fas fa-file-pdf mr-2"></i> PDF
+                    </button>
+                    
+                    <button onclick="viewLogs()" 
+                            class="bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 font-medium py-3 px-4 rounded-xl transition flex items-center justify-center">
+                        <i class="fas fa-terminal mr-2"></i> Logi
+                    </button>
+                </div>
              </div>
 
         </div>
 
-        <!-- Kolumna Prawa: Wyniki -->
+        <!-- Prawa kolumna -->
         <div class="lg:col-span-2 fade-in" style="animation-delay: 0.2s">
             
-            <!-- Error Alert -->
             <div id="errorAlert" class="hidden bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 text-red-700 dark:text-red-400 p-4 mb-6 rounded shadow-sm">
                 <div class="flex">
                     <div class="mr-3"><i class="fas fa-exclamation-triangle"></i></div>
@@ -153,47 +161,36 @@
                     <div class="flex flex-col items-center justify-center py-24 text-gray-400 dark:text-slate-600 opacity-60">
                         <i class="fas fa-robot text-6xl mb-4"></i>
                         <p class="text-lg font-medium">Lista jest pusta</p>
-                        <p class="text-sm">Kliknij przycisk, aby pobrać harmonogram</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal Logów -->
-    <div id="logsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 transition-opacity">
-        <div class="bg-slate-900 rounded-xl shadow-2xl w-full max-w-6xl h-[85vh] flex flex-col border border-slate-700 overflow-hidden transform transition-all scale-100">
+    <!-- Modale (Logs) -->
+    <div id="logsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 rounded-xl shadow-2xl w-full max-w-6xl h-[85vh] flex flex-col border border-slate-700 overflow-hidden">
             <div class="flex justify-between items-center p-4 bg-slate-800 border-b border-slate-700">
-                <h3 class="text-lg font-mono text-emerald-400 flex items-center">
-                    <i class="fas fa-terminal mr-2"></i> Console Output
-                </h3>
+                <h3 class="text-lg font-mono text-emerald-400 flex items-center"><i class="fas fa-terminal mr-2"></i> Console Output</h3>
                 <div class="flex gap-2">
-                    <button onclick="copyLogs()" class="px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm transition">
-                        <i class="fas fa-copy mr-1"></i> Kopiuj
-                    </button>
-                    <button onclick="closeModal()" class="px-3 py-1.5 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
+                    <button onclick="copyLogs()" class="px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm"><i class="fas fa-copy mr-1"></i> Kopiuj</button>
+                    <button onclick="closeModal()" class="px-3 py-1.5 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-400"><i class="fas fa-times text-xl"></i></button>
                 </div>
             </div>
-            <textarea id="logsContent" readonly 
-                class="w-full h-full bg-[#0d1117] text-slate-300 font-mono text-sm p-6 resize-none focus:outline-none leading-relaxed"
-                spellcheck="false"></textarea>
+            <textarea id="logsContent" readonly class="w-full h-full bg-[#0d1117] text-slate-300 font-mono text-sm p-6 resize-none focus:outline-none leading-relaxed"></textarea>
         </div>
     </div>
 
   </div>
 
   <script>
-    // --- KONFIGURACJA KOLORÓW I IKON ---
     const wasteTypesConfig = {
       "Papier": { color: "blue", icon: "fas fa-newspaper" },
       "Metale i tworzywa sztuczne": { color: "yellow", icon: "fas fa-cube" },
       "Szkło": { color: "green", icon: "fas fa-glass-cheers" },
       "Bio": { color: "brown", icon: "fas fa-seedling" },
       "Zmieszane": { color: "gray", icon: "fas fa-trash" },
-      "Zielone": { color: "lime", icon: "fas fa-tree" },
-      "Gabaryty": { color: "orange", icon: "fas fa-couch" }
+      "Zielone": { color: "lime", icon: "fas fa-tree" }
     };
 
     const wasteColors = {
@@ -202,24 +199,45 @@
       "Szkło": "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800",
       "Bio": "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800",
       "Zmieszane": "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600",
-      "Zielone": "bg-lime-100 text-lime-800 border-lime-200 dark:bg-lime-900/30 dark:text-lime-300 dark:border-lime-800",
-      "Gabaryty": "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800"
+      "Zielone": "bg-lime-100 text-lime-800 border-lime-200 dark:bg-lime-900/30 dark:text-lime-300 dark:border-lime-800"
     };
 
     let currentScheduleData = [];
     let currentLogs = [];
     let syncPreferences = {}; 
+    let pdfAvailable = false;
 
-    // --- INICJALIZACJA ---
     document.addEventListener('DOMContentLoaded', () => {
-        initTheme(); // Dark Mode
+        initTheme();
         loadAddress();
         initSyncPreferences();
         renderSyncConfig();
         loadLastState(); 
     });
 
-    // --- DARK MODE ---
+    // --- AUTO MODE LOGIC ---
+    async function toggleAutoMode() {
+        const toggle = document.getElementById('autoModeToggle');
+        const statusText = document.getElementById('autoStatusText');
+        const enable = toggle.checked;
+        
+        // UI Feedback
+        statusText.textContent = enable ? "AKTYWNY" : "WYŁĄCZONY";
+        statusText.className = enable 
+            ? "text-xs font-bold mt-2 text-purple-600 dark:text-purple-400 uppercase tracking-wide"
+            : "text-xs font-bold mt-2 text-gray-400 uppercase tracking-wide";
+        
+        try {
+            await fetch('/api/toggle-auto', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enable: enable })
+            });
+        } catch(e) { console.error(e); }
+    }
+
+    // --- EXISTING LOGIC ---
+
     function initTheme() {
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -227,7 +245,6 @@
             document.documentElement.classList.remove('dark');
         }
     }
-
     function toggleDarkMode() {
         if (document.documentElement.classList.contains('dark')) {
             document.documentElement.classList.remove('dark');
@@ -237,8 +254,20 @@
             localStorage.theme = 'dark';
         }
     }
+    function loadAddress() {
+        const saved = localStorage.getItem('wasteAddress');
+        if(saved) document.getElementById('addressInput').value = saved;
+    }
+    function saveAddress() {
+        const val = document.getElementById('addressInput').value;
+        if(val) {
+            localStorage.setItem('wasteAddress', val);
+            const btn = document.querySelector('button[onclick="saveAddress()"]');
+            btn.innerHTML = '<i class="fas fa-check mr-1"></i> Zapisano';
+            setTimeout(() => { btn.innerHTML = '<i class="fas fa-save mr-1"></i> Zapamiętaj adres'; }, 2000);
+        }
+    }
 
-    // --- PREFERENCJE ---
     function initSyncPreferences() {
         const saved = localStorage.getItem('wasteSyncPrefs');
         if (saved) {
@@ -246,9 +275,11 @@
         } else {
             Object.keys(wasteTypesConfig).forEach(key => syncPreferences[key] = true);
         }
-        Object.keys(wasteTypesConfig).forEach(key => {
-            if (syncPreferences[key] === undefined) syncPreferences[key] = true;
-        });
+        const validKeys = Object.keys(wasteTypesConfig);
+        const newPrefs = {};
+        validKeys.forEach(k => newPrefs[k] = syncPreferences[k] !== undefined ? syncPreferences[k] : true);
+        syncPreferences = newPrefs;
+        localStorage.setItem('wasteSyncPrefs', JSON.stringify(syncPreferences));
     }
 
     function renderSyncConfig() {
@@ -274,46 +305,46 @@
     function toggleSyncPref(type, isChecked) {
         syncPreferences[type] = isChecked;
         localStorage.setItem('wasteSyncPrefs', JSON.stringify(syncPreferences));
-        // Po zmianie checkboxa przortuj listę od nowa
         if (currentScheduleData.length > 0) renderSchedule();
     }
 
-    // --- ADRES ---
-    function loadAddress() {
-        const saved = localStorage.getItem('wasteAddress');
-        if(saved) document.getElementById('addressInput').value = saved;
-    }
-    
-    function saveAddress() {
-        const val = document.getElementById('addressInput').value;
-        if(val) {
-            localStorage.setItem('wasteAddress', val);
-            const btn = document.querySelector('button[onclick="saveAddress()"]');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-check mr-1"></i> Zapisano';
-            btn.classList.add('bg-emerald-600');
-            setTimeout(() => {
-                btn.innerHTML = originalText;
-                btn.classList.remove('bg-emerald-600');
-            }, 2000);
+    function updatePdfButton(available) {
+        const btn = document.getElementById('pdfBtn');
+        if (available) {
+            btn.disabled = false;
+            btn.className = "bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 font-medium py-3 px-4 rounded-xl transition flex items-center justify-center cursor-pointer";
+        } else {
+            btn.disabled = true;
+            btn.className = "bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 text-gray-400 dark:text-slate-500 cursor-not-allowed font-medium py-3 px-4 rounded-xl transition flex items-center justify-center";
         }
     }
 
-    // --- KOMUNIKACJA ---
+    function openPdf() {
+        window.open('/static/harmonogram.pdf?t=' + new Date().getTime(), '_blank');
+    }
+
     async function loadLastState() {
         try {
             const resp = await fetch('/api/last-state');
             const data = await resp.json();
             
-            // Przywracanie czasu ostatniej akcji
-            if (data.timestamp) {
-                document.getElementById('lastFetch').textContent = data.timestamp;
+            // Restore Auto Toggle State
+            const autoToggle = document.getElementById('autoModeToggle');
+            const autoStatus = document.getElementById('autoStatusText');
+            if(data.auto_mode !== undefined) {
+                autoToggle.checked = data.auto_mode;
+                autoStatus.textContent = data.auto_mode ? "AKTYWNY" : "WYŁĄCZONY";
+                autoStatus.className = data.auto_mode 
+                    ? "text-xs font-bold mt-2 text-purple-600 dark:text-purple-400 uppercase tracking-wide"
+                    : "text-xs font-bold mt-2 text-gray-400 uppercase tracking-wide";
             }
 
+            if (data.timestamp) document.getElementById('lastFetch').textContent = data.timestamp;
             if(data.schedule) {
                 currentScheduleData = data.schedule;
                 currentLogs = data.logs || [];
                 document.getElementById('eventsAdded').textContent = data.added_events || 0;
+                updatePdfButton(data.pdf_available);
                 renderSchedule();
             }
         } catch(e) {}
@@ -326,8 +357,9 @@
 
         if(!address) { alert("Wpisz adres!"); return; }
 
-        statusEl.innerHTML = '<div class="flex flex-col items-center animate-pulse"><span class="text-emerald-600 dark:text-emerald-400 font-bold mb-1">Przetwarzanie...</span><span class="text-[10px] text-gray-400">Proszę nie zamykać karty</span></div>';
+        statusEl.innerHTML = '<div class="flex flex-col items-center animate-pulse"><span class="text-emerald-600 dark:text-emerald-400 font-bold mb-1">Pobieranie...</span><span class="text-[10px] text-gray-400">Pobieranie PDF i dat...</span></div>';
         alertEl.classList.add('hidden');
+        updatePdfButton(false);
 
         const allowedTypes = Object.keys(syncPreferences).filter(key => syncPreferences[key]);
 
@@ -343,12 +375,9 @@
                 currentScheduleData = data.schedule;
                 currentLogs = data.logs;
                 document.getElementById('eventsAdded').textContent = data.added_events;
+                if (data.timestamp) document.getElementById('lastFetch').textContent = data.timestamp;
                 
-                // Aktualizacja czasu na UI
-                if (data.timestamp) {
-                    document.getElementById('lastFetch').textContent = data.timestamp;
-                }
-                
+                updatePdfButton(data.pdf_available);
                 statusEl.innerHTML = '<span class="text-emerald-600 dark:text-emerald-400 font-bold text-sm"><i class="fas fa-check-circle"></i> Gotowe</span>';
                 renderSchedule();
             } else {
@@ -361,41 +390,31 @@
         }
     }
 
-    // --- LOGIKA SORTOWANIA I RENDEROWANIA ---
     function renderSchedule() {
         const container = document.getElementById('scheduleContainer');
         container.innerHTML = '';
-
         if (!currentScheduleData || currentScheduleData.length === 0) {
             container.innerHTML = '<div class="flex flex-col items-center justify-center py-24 text-gray-400 dark:text-slate-600 opacity-60"><i class="fas fa-robot text-6xl mb-4"></i><p class="text-lg">Brak danych</p></div>';
             return;
         }
 
-        // --- ALGORYTM SORTOWANIA ---
-        // 1. Najpierw te, które są włączone do synchronizacji (isSynced = true)
-        // 2. Wewnątrz grup: chronologicznie po dacie
         const sorted = [...currentScheduleData].sort((a, b) => {
             const isSyncedA = syncPreferences[a.wasteType];
             const isSyncedB = syncPreferences[b.wasteType];
-
-            if (isSyncedA && !isSyncedB) return -1; // A idzie na górę
-            if (!isSyncedA && isSyncedB) return 1;  // B idzie na górę
-            
-            // Jeśli oba są takie same (oba sync lub oba nie-sync), sortuj po dacie
+            if (isSyncedA && !isSyncedB) return -1;
+            if (!isSyncedA && isSyncedB) return 1;
             return parsePolishDate(a.dateText) - parsePolishDate(b.dateText);
         });
 
         sorted.forEach((item, index) => {
             const isSynced = syncPreferences[item.wasteType];
-            
             const div = document.createElement('div');
-            // Style dla aktywnych vs nieaktywnych
             const baseClass = "flex items-center justify-between p-4 rounded-xl border-l-[6px] shadow-sm transition-all duration-300 fade-in mb-3";
             const activeStyle = "bg-white dark:bg-slate-700/50 border-emerald-500 hover:shadow-md hover:translate-x-1";
             const inactiveStyle = "bg-gray-50 dark:bg-slate-800/50 border-gray-300 dark:border-slate-600 opacity-60 grayscale-[0.8]";
 
             div.className = `${baseClass} ${isSynced ? activeStyle : inactiveStyle}`;
-            div.style.animationDelay = `${index * 0.05}s`; // Kaskadowe pojawianie się
+            div.style.animationDelay = `${index * 0.05}s`;
 
             div.innerHTML = `
                 <div class="flex items-center gap-4">
@@ -411,7 +430,7 @@
                     </div>
                 </div>
                 <div class="flex flex-col items-end gap-2">
-                    <span class="text-xs px-3 py-1 rounded-full border font-medium ${wasteColors[item.wasteType]}">
+                    <span class="text-xs px-3 py-1 rounded-full border font-medium ${wasteColors[item.wasteType] || 'bg-gray-200 dark:bg-slate-700'}">
                         ${item.dateText.split(' ')[0]}
                     </span>
                     ${isSynced 
@@ -434,23 +453,19 @@
         return new Date(year, month, day);
     }
 
-    // --- MODAL ---
     function viewLogs() {
         const modal = document.getElementById('logsModal');
         const textarea = document.getElementById('logsContent');
         textarea.value = (currentLogs && currentLogs.length > 0) ? currentLogs.join('\n') : "Brak logów.";
         modal.classList.remove('hidden');
     }
-
     function copyLogs() {
         document.getElementById('logsContent').select();
         document.execCommand('copy');
     }
-
     function closeModal() {
         document.getElementById('logsModal').classList.add('hidden');
     }
-
     document.getElementById('logsModal').addEventListener('click', (e) => {
         if(e.target.id === 'logsModal') closeModal();
     });
