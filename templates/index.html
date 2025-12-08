@@ -19,10 +19,15 @@
     .fade-in { animation: fadeIn 0.6s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .card-hover:hover { transform: translateY(-3px); transition: all 0.3s ease; }
+    
+    /* Scrollbar */
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     .dark ::-webkit-scrollbar-thumb { background: #475569; }
+    
+    /* Pasek postępu - animacja */
+    .progress-transition { transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
   </style>
 </head>
 <body class="bg-gradient-to-br from-slate-100 via-gray-100 to-zinc-100 dark:from-slate-950 dark:via-slate-900 dark:to-black min-h-screen text-gray-800 dark:text-gray-100 transition-colors duration-300">
@@ -51,23 +56,22 @@
 
     <div class="grid lg:grid-cols-3 gap-8">
         
-        <!-- Lewa kolumna -->
+        <!-- Lewa kolumna: Sterowanie -->
         <div class="lg:col-span-1 space-y-6 fade-in" style="animation-delay: 0.1s">
             
-            <!-- NOWE: Sekcja Automatu -->
+            <!-- Automat -->
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700 p-6 card-hover transition-colors duration-300">
                 <div class="flex justify-between items-center mb-2">
                     <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 flex items-center">
                         <i class="fas fa-robot text-purple-500 mr-3"></i> Automat
                     </h2>
-                    <!-- Toggle Switch -->
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="autoModeToggle" class="sr-only peer" onchange="toggleAutoMode()">
                         <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                     </label>
                 </div>
                 <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                    Uruchamiaj pobieranie automatycznie dzień po każdym odbiorze śmieci.
+                    Sprawdza codziennie rano, czy wczoraj był odbiór śmieci i pobiera nowy harmonogram.
                 </p>
                 <div id="autoStatusText" class="text-xs font-bold mt-2 text-gray-400 uppercase tracking-wide">WYŁĄCZONY</div>
             </div>
@@ -86,19 +90,21 @@
                 </button>
             </div>
 
-            <!-- Filtry -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700 p-6 card-hover transition-colors duration-300">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 flex items-center">
-                        <i class="fas fa-sliders-h text-blue-500 mr-3"></i> Filtry
-                    </h2>
-                </div>
-                <div id="syncConfigContainer" class="space-y-2"></div>
-            </div>
-
-            <!-- Status -->
+            <!-- Status i Pasek Postępu -->
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700 p-6 card-hover transition-colors duration-300">
                 <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">Status</h2>
+                
+                <!-- PROGRESS BAR CONTAINER -->
+                <div id="progressContainer" class="hidden mb-6 bg-gray-50 dark:bg-slate-900 p-3 rounded-lg border border-gray-100 dark:border-slate-700">
+                    <div class="flex justify-between mb-1">
+                        <span id="progressText" class="text-xs font-medium text-emerald-600 dark:text-emerald-400">Inicjalizacja...</span>
+                        <span id="progressPercent" class="text-xs font-bold text-gray-600 dark:text-gray-400">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                        <div id="progressBar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-2.5 rounded-full progress-transition" style="width: 0%"></div>
+                    </div>
+                </div>
+
                 <div class="space-y-3 text-sm">
                     <div class="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-2">
                         <span class="text-gray-500 dark:text-gray-400">Ostatnia akcja:</span>
@@ -108,16 +114,25 @@
                         <span class="text-gray-500 dark:text-gray-400">Dodano wydarzeń:</span>
                         <span id="eventsAdded" class="font-bold text-emerald-600 dark:text-emerald-400">0</span>
                     </div>
-                    <div class="mt-4 pt-2 text-center" id="syncStatus">
-                        <span class="text-gray-400 dark:text-slate-500 text-xs uppercase tracking-wider">Gotowy do pracy</span>
-                    </div>
                 </div>
             </div>
+            
+            <!-- Konfiguracja Frakcji -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700 p-6 card-hover transition-colors duration-300">
+                <div class="flex justify-between items-center mb-2 cursor-pointer" onclick="document.getElementById('syncConfigContainer').classList.toggle('hidden')">
+                    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 flex items-center">
+                        <i class="fas fa-sliders-h text-blue-500 mr-3"></i> Filtry
+                    </h2>
+                    <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                </div>
+                <div id="syncConfigContainer" class="space-y-2 mt-2"></div>
+            </div>
 
+            <!-- Przyciski -->
              <div class="space-y-3">
-                <button onclick="runScraping()" 
+                <button id="runBtn" onclick="runScraping()" 
                         class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-emerald-500/20 transition transform active:scale-[0.98] flex items-center justify-center">
-                    <i class="fas fa-sync-alt mr-2 text-xl"></i> Uruchom Ręcznie
+                    <i class="fas fa-sync-alt mr-2 text-xl"></i> Uruchom Synchronizację
                 </button>
                 
                 <div class="grid grid-cols-2 gap-3">
@@ -135,7 +150,7 @@
 
         </div>
 
-        <!-- Prawa kolumna -->
+        <!-- Prawa kolumna: Wyniki -->
         <div class="lg:col-span-2 fade-in" style="animation-delay: 0.2s">
             
             <div id="errorAlert" class="hidden bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 text-red-700 dark:text-red-400 p-4 mb-6 rounded shadow-sm">
@@ -184,6 +199,7 @@
   </div>
 
   <script>
+    // --- KONFIGURACJA ---
     const wasteTypesConfig = {
       "Papier": { color: "blue", icon: "fas fa-newspaper" },
       "Metale i tworzywa sztuczne": { color: "yellow", icon: "fas fa-cube" },
@@ -205,23 +221,130 @@
     let currentScheduleData = [];
     let currentLogs = [];
     let syncPreferences = {}; 
-    let pdfAvailable = false;
+    let pollingInterval = null;
 
+    // --- INICJALIZACJA ---
     document.addEventListener('DOMContentLoaded', () => {
         initTheme();
         loadAddress();
         initSyncPreferences();
         renderSyncConfig();
         loadLastState(); 
+        
+        // Sprawdź czy coś nie działa w tle po odświeżeniu
+        checkRunningProcess();
     });
 
-    // --- AUTO MODE LOGIC ---
+    // --- LOGIKA PASKA POSTĘPU ---
+
+    async function runScraping() {
+        const address = document.getElementById('addressInput').value;
+        if(!address) { alert("Wpisz adres!"); return; }
+
+        // Start UI
+        const btn = document.getElementById('runBtn');
+        const alertEl = document.getElementById('errorAlert');
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+        alertEl.classList.add('hidden');
+        updatePdfButton(false);
+
+        const allowedTypes = Object.keys(syncPreferences).filter(key => syncPreferences[key]);
+
+        try {
+            // 1. Wyślij żądanie START
+            const res = await fetch('/api/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ address: address, allowedTypes: allowedTypes })
+            });
+            const data = await res.json();
+            
+            if(data.status === 'started' || data.status === 'running') {
+                // 2. Rozpocznij odpytywanie (Polling)
+                startPolling();
+            } else {
+                throw new Error(data.message || "Błąd uruchamiania");
+            }
+        } catch(e) {
+            console.error(e);
+            alert("Nie udało się uruchomić procesu: " + e.message);
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    }
+
+    function startPolling() {
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const progressPercent = document.getElementById('progressPercent');
+        
+        progressContainer.classList.remove('hidden');
+
+        if (pollingInterval) clearInterval(pollingInterval);
+
+        pollingInterval = setInterval(async () => {
+            try {
+                const res = await fetch('/api/progress');
+                const state = await res.json();
+
+                // Aktualizacja UI
+                progressBar.style.width = state.percent + '%';
+                progressText.innerText = state.message;
+                progressPercent.innerText = state.percent + '%';
+
+                if (state.status === 'finished' || state.status === 'error') {
+                    clearInterval(pollingInterval);
+                    
+                    // Odblokuj UI
+                    const btn = document.getElementById('runBtn');
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+                    // Przeładuj wyniki
+                    await loadLastState();
+
+                    if (state.status === 'error') {
+                        const alertEl = document.getElementById('errorAlert');
+                        document.getElementById('errorMessage').innerText = state.message;
+                        alertEl.classList.remove('hidden');
+                        progressText.classList.add('text-red-500');
+                    } else {
+                        // Sukces - ukryj pasek po chwili
+                        setTimeout(() => {
+                           progressContainer.classList.add('hidden');
+                        }, 5000);
+                    }
+                }
+            } catch(e) {
+                console.error("Błąd odpytywania:", e);
+            }
+        }, 1000); // Co 1 sekundę
+    }
+
+    async function checkRunningProcess() {
+        // Sprawdza przy starcie strony czy coś się nie mieli w tle
+        try {
+            const res = await fetch('/api/progress');
+            const state = await res.json();
+            if(state.status === 'running') {
+                const btn = document.getElementById('runBtn');
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                startPolling();
+            }
+        } catch(e) {}
+    }
+
+
+    // --- POZOSTAŁA LOGIKA ---
+
     async function toggleAutoMode() {
         const toggle = document.getElementById('autoModeToggle');
         const statusText = document.getElementById('autoStatusText');
         const enable = toggle.checked;
         
-        // UI Feedback
         statusText.textContent = enable ? "AKTYWNY" : "WYŁĄCZONY";
         statusText.className = enable 
             ? "text-xs font-bold mt-2 text-purple-600 dark:text-purple-400 uppercase tracking-wide"
@@ -236,8 +359,7 @@
         } catch(e) { console.error(e); }
     }
 
-    // --- EXISTING LOGIC ---
-
+    // Theme & Address
     function initTheme() {
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -263,11 +385,13 @@
         if(val) {
             localStorage.setItem('wasteAddress', val);
             const btn = document.querySelector('button[onclick="saveAddress()"]');
+            const oldHtml = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-check mr-1"></i> Zapisano';
-            setTimeout(() => { btn.innerHTML = '<i class="fas fa-save mr-1"></i> Zapamiętaj adres'; }, 2000);
+            setTimeout(() => { btn.innerHTML = oldHtml; }, 2000);
         }
     }
 
+    // Filters
     function initSyncPreferences() {
         const saved = localStorage.getItem('wasteSyncPrefs');
         if (saved) {
@@ -275,6 +399,7 @@
         } else {
             Object.keys(wasteTypesConfig).forEach(key => syncPreferences[key] = true);
         }
+        // Cleanup old keys
         const validKeys = Object.keys(wasteTypesConfig);
         const newPrefs = {};
         validKeys.forEach(k => newPrefs[k] = syncPreferences[k] !== undefined ? syncPreferences[k] : true);
@@ -288,15 +413,15 @@
         Object.keys(wasteTypesConfig).forEach(type => {
             const isChecked = syncPreferences[type];
             const div = document.createElement('label');
-            div.className = "flex items-center space-x-3 p-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer transition border border-transparent hover:border-gray-200 dark:hover:border-slate-600 group";
+            div.className = "flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer transition border border-transparent hover:border-gray-200 dark:hover:border-slate-600 group";
             div.innerHTML = `
                 <div class="relative flex items-center">
-                    <input type="checkbox" class="peer w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500 border-gray-300 dark:border-slate-500 dark:bg-slate-700 dark:checked:bg-emerald-500" 
+                    <input type="checkbox" class="peer w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 border-gray-300 dark:border-slate-500 dark:bg-slate-700 dark:checked:bg-emerald-500" 
                         ${isChecked ? 'checked' : ''} 
                         onchange="toggleSyncPref('${type}', this.checked)">
                 </div>
                 <span class="text-sm text-gray-700 dark:text-gray-300 select-none flex-grow group-hover:text-gray-900 dark:group-hover:text-white transition">${type}</span>
-                <i class="${wasteTypesConfig[type].icon} text-gray-300 dark:text-slate-600 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition text-sm"></i>
+                <i class="${wasteTypesConfig[type].icon} text-gray-400 dark:text-slate-500 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition"></i>
             `;
             container.appendChild(div);
         });
@@ -323,12 +448,13 @@
         window.open('/static/harmonogram.pdf?t=' + new Date().getTime(), '_blank');
     }
 
+    // State Loading
     async function loadLastState() {
         try {
             const resp = await fetch('/api/last-state');
             const data = await resp.json();
             
-            // Restore Auto Toggle State
+            // Auto Toggle UI
             const autoToggle = document.getElementById('autoModeToggle');
             const autoStatus = document.getElementById('autoStatusText');
             if(data.auto_mode !== undefined) {
@@ -340,6 +466,7 @@
             }
 
             if (data.timestamp) document.getElementById('lastFetch').textContent = data.timestamp;
+            
             if(data.schedule) {
                 currentScheduleData = data.schedule;
                 currentLogs = data.logs || [];
@@ -350,51 +477,12 @@
         } catch(e) {}
     }
 
-    async function runScraping() {
-        const statusEl = document.getElementById('syncStatus');
-        const alertEl = document.getElementById('errorAlert');
-        const address = document.getElementById('addressInput').value;
-
-        if(!address) { alert("Wpisz adres!"); return; }
-
-        statusEl.innerHTML = '<div class="flex flex-col items-center animate-pulse"><span class="text-emerald-600 dark:text-emerald-400 font-bold mb-1">Pobieranie...</span><span class="text-[10px] text-gray-400">Pobieranie PDF i dat...</span></div>';
-        alertEl.classList.add('hidden');
-        updatePdfButton(false);
-
-        const allowedTypes = Object.keys(syncPreferences).filter(key => syncPreferences[key]);
-
-        try {
-            const response = await fetch('/api/sync', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ address: address, allowedTypes: allowedTypes })
-            });
-            const data = await response.json();
-
-            if (data.status === 'success' || (data.schedule && data.schedule.length > 0)) {
-                currentScheduleData = data.schedule;
-                currentLogs = data.logs;
-                document.getElementById('eventsAdded').textContent = data.added_events;
-                if (data.timestamp) document.getElementById('lastFetch').textContent = data.timestamp;
-                
-                updatePdfButton(data.pdf_available);
-                statusEl.innerHTML = '<span class="text-emerald-600 dark:text-emerald-400 font-bold text-sm"><i class="fas fa-check-circle"></i> Gotowe</span>';
-                renderSchedule();
-            } else {
-                throw new Error(data.message || "Błąd pobierania");
-            }
-        } catch (error) {
-            statusEl.innerHTML = '<span class="text-red-500 font-bold text-sm">Przerwano</span>';
-            document.getElementById('errorMessage').textContent = error.message;
-            alertEl.classList.remove('hidden');
-        }
-    }
-
+    // Rendering
     function renderSchedule() {
         const container = document.getElementById('scheduleContainer');
         container.innerHTML = '';
         if (!currentScheduleData || currentScheduleData.length === 0) {
-            container.innerHTML = '<div class="flex flex-col items-center justify-center py-24 text-gray-400 dark:text-slate-600 opacity-60"><i class="fas fa-robot text-6xl mb-4"></i><p class="text-lg">Brak danych</p></div>';
+            container.innerHTML = '<div class="flex flex-col items-center justify-center py-24 text-gray-400 dark:text-slate-600 opacity-60"><i class="fas fa-robot text-6xl mb-4"></i><p class="text-lg font-medium">Lista jest pusta</p></div>';
             return;
         }
 
@@ -453,6 +541,7 @@
         return new Date(year, month, day);
     }
 
+    // Logs Modal
     function viewLogs() {
         const modal = document.getElementById('logsModal');
         const textarea = document.getElementById('logsContent');
