@@ -275,7 +275,13 @@ def run_full_process(address, allowed_types):
                         'end': {'date': event_date_str},
                         'colorId': WASTE_COLORS.get(waste_type, "8"),
                         'transparency': 'transparent',
-                        'reminders': {'useDefault': False, 'overrides': [{'method': 'popup', 'minutes': 5 * 60}]}
+                        'reminders': {
+                            'useDefault': False,
+                            'overrides': [
+                                {'method': 'popup', 'minutes': 5 * 60},
+                                {'method': 'email', 'minutes': 5 * 60}
+                            ]
+                        }
                     }
                     service_google.events().insert(calendarId=calendar_id, body=event_body).execute()
                     log(f" -> DODANO: {waste_type}")
