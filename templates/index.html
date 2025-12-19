@@ -47,18 +47,19 @@
         </button>
     </div>
 
-    <!-- ZMIANA 1: Usunięto 'items-start' stąd, aby kolumny miały równą wysokość -->
-    <div class="grid lg:grid-cols-12 gap-6">
+    <!-- MAIN GRID -->
+    <!-- 'items-stretch' (domyślne) sprawia, że kolumny są równej wysokości -->
+    <div class="grid lg:grid-cols-12 gap-6 items-stretch">
         
-        <!-- LEWA KOLUMNA -->
-        <!-- ZMIANA 2: Dodano 'flex flex-col', aby elementy układały się ładnie w pionie -->
+        <!-- LEWA KOLUMNA (Ustawienia) -->
+        <!-- 'flex flex-col' pozwala elementom wypełniać wysokość -->
         <div class="lg:col-span-4 flex flex-col gap-6 fade-in" style="animation-delay: 0.1s">
             
             <!-- Adres -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-5">
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-5 flex-shrink-0">
                 <div class="flex items-center mb-4">
-                    <i class="fas fa-map-marker-alt text-red-500 mr-2"></i>
-                    <h2 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Adres</h2>
+                    <i class="fas fa-map-marker-alt text-red-500 mr-2 text-lg"></i>
+                    <h2 class="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Adres</h2>
                 </div>
                 <input type="text" id="addressInput" 
                     class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm font-medium transition-colors mb-3"
@@ -70,13 +71,13 @@
             </div>
 
             <!-- Automat -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-5 flex justify-between items-center">
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-5 flex justify-between items-center flex-shrink-0">
                 <div>
                     <div class="flex items-center mb-1">
-                        <i class="fas fa-robot text-purple-500 mr-2"></i>
-                        <h2 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Automat</h2>
+                        <i class="fas fa-robot text-purple-500 mr-2 text-lg"></i>
+                        <h2 class="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Automat</h2>
                     </div>
-                    <div id="autoStatusText" class="text-xs font-bold text-gray-400">WYŁĄCZONY</div>
+                    <div id="autoStatusText" class="text-xs font-bold text-gray-400 mt-1">WYŁĄCZONY</div>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" id="autoModeToggle" class="sr-only peer" onchange="toggleAutoMode()">
@@ -84,37 +85,46 @@
                 </label>
             </div>
 
-            <!-- Filtry (Accordion) -->
-            <!-- Tutaj nie dajemy flex-grow, bo to Filtry wyznaczają wysokość -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden h-fit">
+            <!-- Filtry -->
+            <!-- flex-grow: wypełnia resztę miejsca w kolumnie -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden flex flex-col flex-grow">
                 <div class="p-5 flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition" onclick="toggleFiltersAccordion()">
                     <div class="flex items-center">
-                        <i class="fas fa-sliders-h text-blue-500 mr-2"></i>
-                        <h2 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Filtry</h2>
+                        <i class="fas fa-sliders-h text-blue-500 mr-2 text-lg"></i>
+                        <h2 class="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Filtry</h2>
                     </div>
-                    <i id="filterChevron" class="fas fa-chevron-down text-gray-400 text-xs transition-transform duration-300"></i>
+                    <i id="filterChevron" class="fas fa-chevron-down text-gray-400 text-sm transition-transform duration-300"></i>
                 </div>
-                <div id="syncConfigContainer" class="px-5 pb-5 space-y-2 hidden border-t border-gray-100 dark:border-slate-700 pt-4"></div>
+                <!-- Skompresowane filtry (p-4 space-y-1) aby zajmowały mniej miejsca, ale były czytelne -->
+                <div id="syncConfigContainer" class="px-4 pb-4 space-y-1 hidden border-t border-gray-100 dark:border-slate-700 pt-3"></div>
             </div>
 
         </div>
 
-        <!-- PRAWA KOLUMNA -->
-        <!-- ZMIANA 3: Dodano 'flex flex-col', aby elementy się rozciągały -->
-        <div class="lg:col-span-8 flex flex-col gap-6 fade-in" style="animation-delay: 0.2s">
+        <!-- PRAWA KOLUMNA (Panel Sterowania + Lista) -->
+        <!-- h-full sprawia, że ta kolumna też dąży do 100% wysokości grid cella -->
+        <div class="lg:col-span-8 flex flex-col gap-6 fade-in h-full" style="animation-delay: 0.2s">
             
             <!-- PANEL STEROWANIA -->
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 flex-shrink-0">
                 
                 <!-- Górny pasek info -->
-                <div class="flex justify-between items-end mb-6 pb-4 border-b border-gray-100 dark:border-slate-700">
-                    <div>
-                        <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-1">Status Synchronizacji</h3>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Ostatnia akcja: <span id="lastFetch" class="font-mono text-emerald-500 font-bold">-</span></p>
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 pb-4 border-b border-gray-100 dark:border-slate-700 gap-4">
+                    <div class="w-full sm:w-auto">
+                        <div class="flex items-center gap-3 mb-1">
+                            <h3 class="text-xl font-bold text-gray-800 dark:text-white">Status Synchronizacji</h3>
+                            <!-- PRZYCISK DO 19115 -->
+                            <a href="https://warszawa19115.pl/harmonogramy-wywozu-odpadow" target="_blank" 
+                               class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase tracking-wide hover:bg-blue-100 dark:hover:bg-blue-900/50 transition">
+                                <span>Źródło</span>
+                                <i class="fas fa-external-link-alt text-[9px]"></i>
+                            </a>
+                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Ostatnia akcja: <span id="lastFetch" class="font-mono text-emerald-500 font-bold">-</span></p>
                     </div>
-                    <div class="text-right">
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Dodano wydarzeń</p>
-                        <p id="eventsAdded" class="text-2xl font-bold text-emerald-500">0</p>
+                    <div class="text-right flex items-center gap-4 sm:block">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wide">Dodano wydarzeń</p>
+                        <p id="eventsAdded" class="text-3xl font-bold text-emerald-500">0</p>
                     </div>
                 </div>
 
@@ -133,9 +143,9 @@
                 <!-- SIATKA PRZYCISKÓW -->
                 <div class="grid grid-cols-3 gap-4">
                     <button id="runBtn" onclick="runScraping()" 
-                            class="col-span-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-6 rounded-lg shadow-lg shadow-emerald-500/20 transition transform active:scale-[0.99] flex items-center justify-center gap-3">
+                            class="col-span-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-6 rounded-lg shadow-lg shadow-emerald-500/20 transition transform active:scale-[0.99] flex items-center justify-center gap-3 text-sm uppercase tracking-wide">
                         <i class="fas fa-sync-alt text-lg"></i> 
-                        <span>SYNCHRONIZUJ TERAZ</span>
+                        <span>Synchronizuj Teraz</span>
                     </button>
 
                     <button id="pdfBtn" onclick="openPdf(false)" disabled
@@ -159,16 +169,15 @@
             </div>
 
             <!-- LISTA TERMINÓW -->
-            <!-- ZMIANA 4: Dodano 'flex-grow', aby ten kontener wypełniał pozostałą przestrzeń w dół -->
+            <!-- flex-grow: wypełnia resztę miejsca w prawej kolumnie, zrównując się z lewą -->
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 flex-grow flex flex-col">
-                <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-6 flex items-center">
-                    <i class="far fa-calendar-alt mr-2"></i> Znalezione terminy
+                <h3 class="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-6 flex items-center border-b border-gray-100 dark:border-slate-700 pb-4">
+                    <i class="far fa-calendar-alt mr-2 text-lg"></i> Znalezione terminy
                 </h3>
-                <!-- scheduleContainer wypełnia wnętrze karty -->
-                <div id="scheduleContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div id="scheduleContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 content-start">
                     <div class="col-span-full flex flex-col items-center justify-center py-16 text-gray-400 dark:text-slate-600">
                         <i class="fas fa-robot text-6xl mb-4 opacity-20"></i>
-                        <p class="text-sm font-medium">Brak danych harmonogramu</p>
+                        <p class="text-base font-medium">Brak danych harmonogramu</p>
                     </div>
                 </div>
             </div>
@@ -193,7 +202,6 @@
   </div>
 
   <script>
-    // ... (Tu wklej dokładnie ten sam JavaScript co w poprzedniej wersji, bez zmian) ...
     // --- KONFIGURACJA ---
     const wasteTypesConfig = {
       "Papier": { icon: "fas fa-newspaper" },
@@ -424,15 +432,15 @@
         Object.keys(wasteTypesConfig).forEach(type => {
             const isChecked = syncPreferences[type];
             const div = document.createElement('label');
-            div.className = "flex items-center space-x-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-700/50 cursor-pointer transition group";
+            div.className = "flex items-center space-x-3 p-1.5 rounded hover:bg-gray-50 dark:hover:bg-slate-700/50 cursor-pointer transition group";
             div.innerHTML = `
                 <div class="relative flex items-center">
-                    <input type="checkbox" class="peer w-4 h-4 text-emerald-600 rounded border-gray-300 dark:border-slate-600 focus:ring-emerald-500 dark:bg-slate-800" 
+                    <input type="checkbox" class="peer w-5 h-5 text-emerald-600 rounded border-gray-300 dark:border-slate-600 focus:ring-emerald-500 dark:bg-slate-800" 
                         ${isChecked ? 'checked' : ''} 
                         onchange="toggleSyncPref('${type}', this.checked)">
                 </div>
-                <span class="text-xs font-medium text-gray-600 dark:text-gray-300 select-none flex-grow group-hover:text-gray-900 dark:group-hover:text-white transition">${type}</span>
-                <i class="${wasteTypesConfig[type].icon} text-gray-400 dark:text-slate-600 text-xs"></i>
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-200 select-none flex-grow group-hover:text-gray-900 dark:group-hover:text-white transition">${type}</span>
+                <i class="${wasteTypesConfig[type].icon} text-gray-400 dark:text-slate-500 text-sm"></i>
             `;
             container.appendChild(div);
         });
@@ -493,10 +501,10 @@
         c.innerHTML = '';
         if(!data || !data.length) {
             c.className = "col-span-full"; 
-            return c.innerHTML = '<div class="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-slate-600"><i class="fas fa-robot text-6xl mb-4 opacity-20"></i><p class="text-sm font-medium">Brak danych harmonogramu</p></div>';
+            return c.innerHTML = '<div class="flex flex-col items-center justify-center py-10 text-gray-400 dark:text-slate-600"><i class="fas fa-robot text-4xl mb-2 opacity-20"></i><p class="text-xs font-medium">Brak danych</p></div>';
         }
         
-        c.className = "grid grid-cols-1 md:grid-cols-2 gap-4"; 
+        c.className = "grid grid-cols-1 md:grid-cols-2 gap-4"; // Przywrócono większy odstęp (gap-4)
 
         const sorted = [...data].sort((a, b) => {
             const isSyncedA = syncPreferences[a.wasteType];
@@ -508,6 +516,8 @@
 
         sorted.forEach((item) => {
             const isSynced = syncPreferences[item.wasteType];
+            
+            // PRZYWRÓCONE WIĘKSZE KAFELKI (p-4)
             const activeStyle = "bg-white dark:bg-slate-700 border-l-4 border-emerald-500 shadow-sm";
             const inactiveStyle = "bg-gray-50 dark:bg-slate-800/50 border-l-4 border-gray-300 dark:border-slate-600 opacity-60";
 
@@ -516,18 +526,20 @@
 
             div.innerHTML = `
                 <div class="flex items-center gap-4">
+                    <!-- PRZYWRÓCONE WIĘKSZE IKONY (w-10 h-10) -->
                     <div class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100 dark:bg-slate-800 ${isSynced ? 'text-gray-600 dark:text-gray-300' : 'text-gray-400'}">
                         <i class="${wasteTypesConfig[item.wasteType]?.icon || 'fas fa-trash'}"></i>
                     </div>
                     <div>
+                        <!-- PRZYWRÓCONY WIĘKSZY FONT -->
                         <h4 class="font-bold text-sm text-gray-800 dark:text-gray-100">${item.wasteType}</h4>
                         <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">${item.dateText}</p>
                     </div>
                 </div>
                 <div>
                     ${isSynced 
-                        ? '<span class="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold rounded uppercase tracking-wide">Sync</span>'
-                        : '<span class="px-2 py-1 bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400 text-[10px] font-bold rounded uppercase tracking-wide">Pomiń</span>'
+                        ? '<span class="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded uppercase tracking-wide">Sync</span>'
+                        : '<span class="px-2 py-1 bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400 text-xs font-bold rounded uppercase tracking-wide">Pomiń</span>'
                     }
                 </div>
             `;
