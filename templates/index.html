@@ -14,26 +14,28 @@
   </script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-    .fade-in { animation: fadeIn 0.6s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .fade-in { animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    
     .card-hover:hover { transform: translateY(-2px); transition: all 0.3s ease; }
+    
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     .dark ::-webkit-scrollbar-thumb { background: #475569; }
+    
     .progress-transition { transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
-    .rotate-180 { transform: rotate(180deg); }
-    .transition-transform { transition-property: transform; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
   </style>
 </head>
-<body class="bg-gray-100 dark:bg-[#0f172a] min-h-screen text-gray-800 dark:text-gray-100 transition-colors duration-300 font-sans">
+<body class="bg-gray-100 dark:bg-[#0f172a] min-h-screen text-gray-800 dark:text-gray-100 transition-colors duration-500 font-sans">
 
   <div class="container mx-auto px-4 py-8 max-w-7xl">
     
     <!-- Header -->
     <div class="flex justify-between items-center mb-8 fade-in">
         <div class="flex items-center gap-4">
-            <div class="p-3 rounded-2xl bg-white dark:bg-slate-800 shadow-lg text-emerald-500">
+            <div class="p-3 rounded-2xl bg-white dark:bg-slate-800 shadow-lg text-emerald-500 transition-transform hover:scale-105 duration-300">
                 <i class="fas fa-recycle text-3xl"></i>
             </div>
             <div>
@@ -41,43 +43,42 @@
                 <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Warszawa 19115 & Google Calendar</p>
             </div>
         </div>
-        <button onclick="toggleDarkMode()" class="w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-md hover:bg-gray-50 dark:hover:bg-slate-700 transition flex items-center justify-center">
-            <i class="fas fa-moon dark:hidden text-slate-600"></i>
-            <i class="fas fa-sun hidden dark:block text-yellow-400"></i>
+        <button onclick="toggleDarkMode()" class="w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-md hover:bg-gray-50 dark:hover:bg-slate-700 transition flex items-center justify-center group">
+            <i class="fas fa-moon dark:hidden text-slate-600 group-hover:-rotate-12 transition-transform"></i>
+            <i class="fas fa-sun hidden dark:block text-yellow-400 group-hover:rotate-45 transition-transform"></i>
         </button>
     </div>
 
     <!-- MAIN GRID -->
-    <!-- 'items-stretch' (domyślne) sprawia, że kolumny są równej wysokości -->
+    <!-- items-stretch: WYMUSZA RÓWNĄ WYSOKOŚĆ KOLUMN -->
     <div class="grid lg:grid-cols-12 gap-6 items-stretch">
         
         <!-- LEWA KOLUMNA (Ustawienia) -->
-        <!-- 'flex flex-col' pozwala elementom wypełniać wysokość -->
         <div class="lg:col-span-4 flex flex-col gap-6 fade-in" style="animation-delay: 0.1s">
             
             <!-- Adres -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-5 flex-shrink-0">
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 flex-shrink-0 card-hover">
                 <div class="flex items-center mb-4">
-                    <i class="fas fa-map-marker-alt text-red-500 mr-2 text-lg"></i>
+                    <i class="fas fa-map-marker-alt text-red-500 mr-3 text-lg"></i>
                     <h2 class="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Adres</h2>
                 </div>
                 <input type="text" id="addressInput" 
                     class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm font-medium transition-colors mb-3"
                     value="Obozowa 90" />
                 <button onclick="saveAddress()" 
-                        class="w-full bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-bold py-3 rounded-lg transition uppercase tracking-wide">
+                        class="w-full bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-bold py-3 rounded-lg transition uppercase tracking-wide shadow-lg shadow-slate-500/20">
                     Zapisz Adres
                 </button>
             </div>
 
-            <!-- Automat -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-5 flex justify-between items-center flex-shrink-0">
+            <!-- Automat (POPRAWIONY) -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 flex justify-between items-center flex-shrink-0 card-hover">
                 <div>
                     <div class="flex items-center mb-1">
-                        <i class="fas fa-robot text-purple-500 mr-2 text-lg"></i>
+                        <i class="fas fa-robot text-purple-500 mr-3 text-lg"></i>
                         <h2 class="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Automat</h2>
                     </div>
-                    <div id="autoStatusText" class="text-xs font-bold text-gray-400 mt-1">WYŁĄCZONY</div>
+                    <div id="autoStatusText" class="text-xs font-bold text-gray-400 mt-1 ml-8 transition-colors duration-300">WYŁĄCZONY</div>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" id="autoModeToggle" class="sr-only peer" onchange="toggleAutoMode()">
@@ -86,98 +87,102 @@
             </div>
 
             <!-- Filtry -->
-            <!-- flex-grow: wypełnia resztę miejsca w kolumnie -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden flex flex-col flex-grow">
-                <div class="p-5 flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition" onclick="toggleFiltersAccordion()">
+            <!-- flex-grow: To sprawia, że ten panel rozciąga się, by wyrównać dół z prawą kolumną -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden flex flex-col flex-grow card-hover">
+                <div class="p-6 border-b border-gray-100 dark:border-slate-700">
                     <div class="flex items-center">
-                        <i class="fas fa-sliders-h text-blue-500 mr-2 text-lg"></i>
+                        <i class="fas fa-sliders-h text-blue-500 mr-3 text-lg"></i>
                         <h2 class="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Filtry</h2>
                     </div>
-                    <i id="filterChevron" class="fas fa-chevron-down text-gray-400 text-sm transition-transform duration-300"></i>
                 </div>
-                <!-- Skompresowane filtry (p-4 space-y-1) aby zajmowały mniej miejsca, ale były czytelne -->
-                <div id="syncConfigContainer" class="px-4 pb-4 space-y-1 hidden border-t border-gray-100 dark:border-slate-700 pt-3"></div>
+                <!-- Kontener z justify-between aby filtry ładnie się rozłożyły -->
+                <div id="syncConfigContainer" class="p-6 flex flex-col justify-between flex-grow h-full space-y-1"></div>
             </div>
 
         </div>
 
-        <!-- PRAWA KOLUMNA (Panel Sterowania + Lista) -->
-        <!-- h-full sprawia, że ta kolumna też dąży do 100% wysokości grid cella -->
-        <div class="lg:col-span-8 flex flex-col gap-6 fade-in h-full" style="animation-delay: 0.2s">
+        <!-- PRAWA KOLUMNA -->
+        <div class="lg:col-span-8 flex flex-col gap-6 fade-in" style="animation-delay: 0.2s">
             
             <!-- PANEL STEROWANIA -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 flex-shrink-0">
-                
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 flex-shrink-0 card-hover relative overflow-hidden">
+                <!-- Tło dekoracyjne -->
+                <div class="absolute top-0 right-0 -mt-10 -mr-10 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+
                 <!-- Górny pasek info -->
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 pb-4 border-b border-gray-100 dark:border-slate-700 gap-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 pb-4 border-b border-gray-100 dark:border-slate-700 gap-4 relative z-10">
                     <div class="w-full sm:w-auto">
                         <div class="flex items-center gap-3 mb-1">
                             <h3 class="text-xl font-bold text-gray-800 dark:text-white">Status Synchronizacji</h3>
                             <!-- PRZYCISK DO 19115 -->
                             <a href="https://warszawa19115.pl/harmonogramy-wywozu-odpadow" target="_blank" 
-                               class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase tracking-wide hover:bg-blue-100 dark:hover:bg-blue-900/50 transition">
-                                <span>Źródło</span>
-                                <i class="fas fa-external-link-alt text-[9px]"></i>
+                               class="group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase tracking-wide hover:bg-blue-100 dark:hover:bg-blue-900/50 transition border border-blue-100 dark:border-blue-800/50">
+                                <span>Otwórz 19115</span>
+                                <i class="fas fa-external-link-alt text-[9px] group-hover:translate-x-0.5 transition-transform"></i>
                             </a>
                         </div>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Ostatnia akcja: <span id="lastFetch" class="font-mono text-emerald-500 font-bold">-</span></p>
                     </div>
                     <div class="text-right flex items-center gap-4 sm:block">
                         <p class="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wide">Dodano wydarzeń</p>
-                        <p id="eventsAdded" class="text-3xl font-bold text-emerald-500">0</p>
+                        <p id="eventsAdded" class="text-3xl font-bold text-emerald-500 tracking-tight">0</p>
                     </div>
                 </div>
 
                 <!-- Pasek Postępu -->
-                <div id="progressContainer" class="hidden mb-6 bg-gray-50 dark:bg-slate-900 p-3 rounded-lg border border-gray-100 dark:border-slate-700">
-                    <div class="flex justify-between mb-1 text-xs font-bold"><span id="progressText" class="text-emerald-600">Start...</span><span id="progressPercent">0%</span></div>
-                    <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700"><div id="progressBar" class="bg-emerald-500 h-2 rounded-full progress-transition" style="width: 0%"></div></div>
+                <div id="progressContainer" class="hidden mb-6 bg-gray-50 dark:bg-slate-900 p-3 rounded-lg border border-gray-100 dark:border-slate-700 relative z-10">
+                    <div class="flex justify-between mb-1 text-xs font-bold"><span id="progressText" class="text-emerald-600 animate-pulse">Start...</span><span id="progressPercent">0%</span></div>
+                    <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700 overflow-hidden"><div id="progressBar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-2 rounded-full progress-transition" style="width: 0%"></div></div>
                 </div>
 
                 <!-- Error Alert -->
-                <div id="errorAlert" class="hidden mb-6 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 text-red-700 dark:text-red-400 p-4 rounded text-sm">
+                <div id="errorAlert" class="hidden mb-6 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 text-red-700 dark:text-red-400 p-4 rounded text-sm relative z-10">
                     <p class="font-bold mb-1"><i class="fas fa-exclamation-circle mr-2"></i>Wystąpił błąd</p> 
                     <span id="errorMessage"></span>
                 </div>
 
                 <!-- SIATKA PRZYCISKÓW -->
-                <div class="grid grid-cols-3 gap-4">
+                <div class="grid grid-cols-3 gap-4 relative z-10">
                     <button id="runBtn" onclick="runScraping()" 
-                            class="col-span-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-6 rounded-lg shadow-lg shadow-emerald-500/20 transition transform active:scale-[0.99] flex items-center justify-center gap-3 text-sm uppercase tracking-wide">
-                        <i class="fas fa-sync-alt text-lg"></i> 
+                            class="col-span-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-4 px-6 rounded-lg shadow-lg shadow-emerald-500/20 transition-all transform active:scale-[0.98] flex items-center justify-center gap-3 text-sm uppercase tracking-wide group">
+                        <i class="fas fa-sync-alt text-lg group-hover:rotate-180 transition-transform duration-700"></i> 
                         <span>Synchronizuj Teraz</span>
                     </button>
 
                     <button id="pdfBtn" onclick="openPdf(false)" disabled
-                            class="col-span-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium">
-                        <i class="fas fa-file-pdf text-red-500 text-lg"></i>
+                            class="col-span-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 hover:border-gray-300 dark:hover:border-slate-500 py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium group">
+                        <i class="fas fa-file-pdf text-red-500 text-lg group-hover:scale-110 transition-transform"></i>
                         <span>Oryginał</span>
                     </button>
                     
                     <button id="pdfLabeledBtn" onclick="openPdf(true)" disabled
-                            class="col-span-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium">
-                        <i class="fas fa-magic text-purple-500 text-lg"></i>
+                            class="col-span-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 hover:border-gray-300 dark:hover:border-slate-500 py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium group">
+                        <i class="fas fa-magic text-purple-500 text-lg group-hover:scale-110 transition-transform"></i>
                         <span>Opisany</span>
                     </button>
 
                     <button onclick="viewLogs()" 
-                            class="col-span-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 py-3 rounded-lg transition flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium">
-                        <i class="fas fa-terminal text-gray-500 text-lg"></i>
+                            class="col-span-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 hover:border-gray-300 dark:hover:border-slate-500 py-3 rounded-lg transition-all flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium group">
+                        <i class="fas fa-terminal text-gray-500 dark:text-gray-400 text-lg group-hover:scale-110 transition-transform"></i>
                         <span>Logi</span>
                     </button>
                 </div>
             </div>
 
             <!-- LISTA TERMINÓW -->
-            <!-- flex-grow: wypełnia resztę miejsca w prawej kolumnie, zrównując się z lewą -->
+            <!-- flex-grow: wypełnia resztę miejsca w prawej kolumnie -->
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 flex-grow flex flex-col">
                 <h3 class="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-6 flex items-center border-b border-gray-100 dark:border-slate-700 pb-4">
-                    <i class="far fa-calendar-alt mr-2 text-lg"></i> Znalezione terminy
+                    <i class="far fa-calendar-alt mr-2 text-lg text-emerald-500"></i> Znalezione terminy
                 </h3>
-                <div id="scheduleContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 content-start">
-                    <div class="col-span-full flex flex-col items-center justify-center py-16 text-gray-400 dark:text-slate-600">
-                        <i class="fas fa-robot text-6xl mb-4 opacity-20"></i>
-                        <p class="text-base font-medium">Brak danych harmonogramu</p>
+                
+                <!-- CONTAINER NA KAFELKI (Grid + AutoAnimate) -->
+                <!-- relative + min-h aby placeholder dobrze wyglądał -->
+                <div id="scheduleContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 content-start relative flex-grow">
+                    <!-- Placeholder -->
+                    <div class="col-span-full flex flex-col items-center justify-center py-10 text-gray-400 dark:text-slate-600 absolute inset-0">
+                        <i class="fas fa-robot text-6xl mb-4 opacity-10 animate-bounce" style="animation-duration: 3s"></i>
+                        <p class="text-sm font-medium opacity-50">Brak danych harmonogramu</p>
                     </div>
                 </div>
             </div>
@@ -185,21 +190,28 @@
         </div>
     </div>
 
-    <!-- Modale (Logs) -->
-    <div id="logsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 transition-opacity" onclick="if(event.target.id=='logsModal') closeModal()">
-        <div class="bg-slate-900 rounded-xl w-full max-w-5xl h-[80vh] flex flex-col border border-slate-700 shadow-2xl overflow-hidden transform scale-100">
+    <!-- Modal Logs (Backdrop Blur) -->
+    <div id="logsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 transition-opacity duration-300" onclick="if(event.target.id=='logsModal') closeModal()">
+        <div class="bg-slate-900 rounded-xl w-full max-w-5xl h-[80vh] flex flex-col border border-slate-700 shadow-2xl overflow-hidden transform scale-100 transition-all">
             <div class="flex justify-between items-center p-4 bg-slate-800 border-b border-slate-700">
                 <h3 class="text-emerald-400 font-mono text-sm uppercase tracking-wider"><i class="fas fa-terminal mr-2"></i> Logi Systemowe</h3>
                 <div class="flex gap-2">
-                    <button onclick="copyLogs()" class="text-xs px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-200 transition">Kopiuj</button>
-                    <button onclick="closeModal()" class="text-slate-400 hover:text-white px-2"><i class="fas fa-times"></i></button>
+                    <button onclick="copyLogs()" class="text-xs px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-200 transition font-bold uppercase tracking-wide">Kopiuj</button>
+                    <button onclick="closeModal()" class="text-slate-400 hover:text-white px-2 transition-transform hover:rotate-90"><i class="fas fa-times text-lg"></i></button>
                 </div>
             </div>
-            <textarea id="logsContent" readonly class="w-full h-full bg-[#0d1117] text-slate-300 font-mono text-xs p-6 resize-none focus:outline-none leading-relaxed"></textarea>
+            <textarea id="logsContent" readonly class="w-full h-full bg-[#0d1117] text-slate-300 font-mono text-xs p-6 resize-none focus:outline-none leading-relaxed selection:bg-emerald-900 selection:text-white"></textarea>
         </div>
     </div>
 
   </div>
+
+  <!-- BIBLIOTEKA ANIMACJI -->
+  <script type="module">
+    import autoAnimate from 'https://cdn.jsdelivr.net/npm/@formkit/auto-animate/index.mjs';
+    // Włączamy animację na kontenerze
+    autoAnimate(document.getElementById('scheduleContainer'), { duration: 300 });
+  </script>
 
   <script>
     // --- KONFIGURACJA ---
@@ -231,41 +243,9 @@
         loadAddress();
         initSyncPreferences();
         renderSyncConfig();
-        restoreFilterState();
         loadLastState(); 
         checkRunningProcess();
     });
-
-    // --- AKORDEON FILTRÓW ---
-    function toggleFiltersAccordion() {
-        const container = document.getElementById('syncConfigContainer');
-        const chevron = document.getElementById('filterChevron');
-        const isHidden = container.classList.contains('hidden');
-        
-        if (isHidden) {
-            container.classList.remove('hidden');
-            chevron.classList.add('rotate-180');
-            localStorage.setItem('filtersExpanded', 'true');
-        } else {
-            container.classList.add('hidden');
-            chevron.classList.remove('rotate-180');
-            localStorage.setItem('filtersExpanded', 'false');
-        }
-    }
-
-    function restoreFilterState() {
-        const expanded = localStorage.getItem('filtersExpanded') === 'true';
-        const container = document.getElementById('syncConfigContainer');
-        const chevron = document.getElementById('filterChevron');
-        
-        if (expanded) {
-            container.classList.remove('hidden');
-            chevron.classList.add('rotate-180');
-        } else {
-            container.classList.add('hidden');
-            chevron.classList.remove('rotate-180');
-        }
-    }
 
     // --- LOGIKA APLIKACJI ---
 
@@ -273,11 +253,10 @@
         const address = document.getElementById('addressInput').value;
         if(!address) { alert("Wpisz adres!"); return; }
 
-        // Start UI
         const btn = document.getElementById('runBtn');
         const alertEl = document.getElementById('errorAlert');
         btn.disabled = true;
-        btn.classList.add('opacity-75', 'cursor-not-allowed');
+        btn.classList.add('opacity-75', 'cursor-not-allowed', 'brightness-90');
         btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> PRZETWARZANIE...';
         alertEl.classList.add('hidden');
         
@@ -308,8 +287,8 @@
     function resetBtn() {
         const btn = document.getElementById('runBtn');
         btn.disabled = false;
-        btn.classList.remove('opacity-75', 'cursor-not-allowed');
-        btn.innerHTML = '<i class="fas fa-sync-alt text-lg"></i><span>SYNCHRONIZUJ TERAZ</span>';
+        btn.classList.remove('opacity-75', 'cursor-not-allowed', 'brightness-90');
+        btn.innerHTML = '<i class="fas fa-sync-alt text-lg group-hover:rotate-180 transition-transform duration-700"></i><span>SYNCHRONIZUJ TERAZ</span>';
     }
 
     function startPolling() {
@@ -356,7 +335,7 @@
             if(state.status === 'running') {
                 const btn = document.getElementById('runBtn');
                 btn.disabled = true;
-                btn.classList.add('opacity-75', 'cursor-not-allowed');
+                btn.classList.add('opacity-75', 'cursor-not-allowed', 'brightness-90');
                 btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> WZNAWIANIE...';
                 startPolling();
             }
@@ -372,8 +351,8 @@
         
         statusText.textContent = enable ? "AKTYWNY" : "WYŁĄCZONY";
         statusText.className = enable 
-            ? "text-xs font-bold mt-1 text-purple-600 dark:text-purple-400 uppercase tracking-wide"
-            : "text-xs font-bold mt-1 text-gray-400 uppercase tracking-wide";
+            ? "text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wide ml-8 transition-colors duration-300"
+            : "text-[10px] font-bold text-gray-400 ml-8 transition-colors duration-300";
         
         await fetch('/api/toggle-auto', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -408,7 +387,11 @@
             const btn = document.querySelector('button[onclick="saveAddress()"]');
             const original = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-check"></i> ZAPISANO';
-            setTimeout(() => { btn.innerHTML = original; }, 2000);
+            btn.classList.add('bg-emerald-600', 'text-white');
+            setTimeout(() => { 
+                btn.innerHTML = original; 
+                btn.classList.remove('bg-emerald-600', 'text-white');
+            }, 2000);
         }
     }
 
@@ -432,15 +415,15 @@
         Object.keys(wasteTypesConfig).forEach(type => {
             const isChecked = syncPreferences[type];
             const div = document.createElement('label');
-            div.className = "flex items-center space-x-3 p-1.5 rounded hover:bg-gray-50 dark:hover:bg-slate-700/50 cursor-pointer transition group";
+            div.className = "flex items-center space-x-3 p-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 cursor-pointer transition group";
             div.innerHTML = `
                 <div class="relative flex items-center">
-                    <input type="checkbox" class="peer w-5 h-5 text-emerald-600 rounded border-gray-300 dark:border-slate-600 focus:ring-emerald-500 dark:bg-slate-800" 
+                    <input type="checkbox" class="peer w-5 h-5 text-emerald-600 rounded border-gray-300 dark:border-slate-600 focus:ring-emerald-500 dark:bg-slate-800 transition-all" 
                         ${isChecked ? 'checked' : ''} 
                         onchange="toggleSyncPref('${type}', this.checked)">
                 </div>
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-200 select-none flex-grow group-hover:text-gray-900 dark:group-hover:text-white transition">${type}</span>
-                <i class="${wasteTypesConfig[type].icon} text-gray-400 dark:text-slate-500 text-sm"></i>
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-200 select-none flex-grow group-hover:text-gray-900 dark:group-hover:text-white transition-colors">${type}</span>
+                <i class="${wasteTypesConfig[type].icon} text-gray-400 dark:text-slate-500 text-sm group-hover:text-emerald-500 transition-colors"></i>
             `;
             container.appendChild(div);
         });
@@ -456,14 +439,14 @@
         const btn1 = document.getElementById('pdfBtn');
         const btn2 = document.getElementById('pdfLabeledBtn');
         
-        const enabledClass = "bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 cursor-pointer";
+        const enabledClass = "bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 cursor-pointer shadow-sm hover:shadow";
         const disabledClass = "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-400 dark:text-slate-600";
 
         btn1.disabled = !originalAvail;
-        btn1.className = `col-span-1 py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium border ${originalAvail ? enabledClass : disabledClass}`;
+        btn1.className = `col-span-1 py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium border ${originalAvail ? enabledClass : disabledClass}`;
 
         btn2.disabled = !labeledAvail;
-        btn2.className = `col-span-1 py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium border ${labeledAvail ? enabledClass : disabledClass}`;
+        btn2.className = `col-span-1 py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium border ${labeledAvail ? enabledClass : disabledClass}`;
     }
 
     function openPdf(labeled) {
@@ -481,7 +464,9 @@
             if(data.auto_mode !== undefined) {
                 autoToggle.checked = data.auto_mode;
                 autoStatus.textContent = data.auto_mode ? "AKTYWNY" : "WYŁĄCZONY";
-                autoStatus.className = data.auto_mode ? "text-xs font-bold mt-1 text-purple-600 dark:text-purple-400" : "text-xs font-bold mt-1 text-gray-400";
+                autoStatus.className = data.auto_mode 
+                    ? "text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wide ml-8 transition-colors duration-300"
+                    : "text-[10px] font-bold text-gray-400 ml-8 transition-colors duration-300";
             }
 
             if (data.timestamp) document.getElementById('lastFetch').textContent = data.timestamp;
@@ -498,14 +483,14 @@
 
     function renderSchedule(data) {
         const c = document.getElementById('scheduleContainer');
-        c.innerHTML = '';
-        if(!data || !data.length) {
-            c.className = "col-span-full"; 
-            return c.innerHTML = '<div class="flex flex-col items-center justify-center py-10 text-gray-400 dark:text-slate-600"><i class="fas fa-robot text-4xl mb-2 opacity-20"></i><p class="text-xs font-medium">Brak danych</p></div>';
-        }
         
-        c.className = "grid grid-cols-1 md:grid-cols-2 gap-4"; // Przywrócono większy odstęp (gap-4)
+        // --- KLUCZOWA ZMIANA: PRZEKLEJANIE ELEMENTÓW DO ANIMACJI ---
+        if(!data || !data.length) {
+            c.innerHTML = '<div class="col-span-full flex flex-col items-center justify-center py-20 text-gray-400 dark:text-slate-600 absolute inset-0"><i class="fas fa-robot text-6xl mb-4 opacity-10"></i><p class="text-sm font-medium opacity-50">Brak danych harmonogramu</p></div>';
+            return;
+        }
 
+        // Posortuj dane
         const sorted = [...data].sort((a, b) => {
             const isSyncedA = syncPreferences[a.wasteType];
             const isSyncedB = syncPreferences[b.wasteType];
@@ -514,37 +499,65 @@
             return parsePolishDate(a.dateText) - parsePolishDate(b.dateText);
         });
 
+        // Wyczyść tekst "Brak danych" jeśli tam był, ale nie czyść całego innerHTML jeśli mamy już kafelki
+        if(c.querySelector('.fa-robot')) c.innerHTML = '';
+
+        // Tworzymy mapę istniejących elementów, żeby ich nie kasować
+        const existingElements = {};
+        Array.from(c.children).forEach(el => {
+            if(el.id) existingElements[el.id] = el;
+        });
+
+        // Generujemy/Aktualizujemy kafelki
         sorted.forEach((item) => {
+            // Slugify ID: usuwamy spacje i polskie znaki z wasteType + data
+            const uniqueId = `card-${item.wasteType.replace(/\s+/g, '')}-${item.dateText.replace(/\s+/g, '')}`;
             const isSynced = syncPreferences[item.wasteType];
             
-            // PRZYWRÓCONE WIĘKSZE KAFELKI (p-4)
-            const activeStyle = "bg-white dark:bg-slate-700 border-l-4 border-emerald-500 shadow-sm";
-            const inactiveStyle = "bg-gray-50 dark:bg-slate-800/50 border-l-4 border-gray-300 dark:border-slate-600 opacity-60";
+            // Style
+            const activeStyle = "bg-white dark:bg-slate-700 border-l-4 border-emerald-500 shadow-sm opacity-100 transform scale-100";
+            const inactiveStyle = "bg-gray-50 dark:bg-slate-800/50 border-l-4 border-gray-300 dark:border-slate-600 opacity-60 grayscale-[0.5]";
+            const className = `p-4 rounded-xl flex justify-between items-center ${isSynced ? activeStyle : inactiveStyle} transition-all duration-300 hover:shadow-md hover:translate-x-1`;
 
-            const div = document.createElement('div');
-            div.className = `p-4 rounded-lg flex justify-between items-center ${isSynced ? activeStyle : inactiveStyle} transition-all`;
+            let div = existingElements[uniqueId];
 
-            div.innerHTML = `
+            const htmlContent = `
                 <div class="flex items-center gap-4">
-                    <!-- PRZYWRÓCONE WIĘKSZE IKONY (w-10 h-10) -->
                     <div class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100 dark:bg-slate-800 ${isSynced ? 'text-gray-600 dark:text-gray-300' : 'text-gray-400'}">
-                        <i class="${wasteTypesConfig[item.wasteType]?.icon || 'fas fa-trash'}"></i>
+                        <i class="${wasteTypesConfig[item.wasteType]?.icon || 'fas fa-trash'} text-base"></i>
                     </div>
                     <div>
-                        <!-- PRZYWRÓCONY WIĘKSZY FONT -->
-                        <h4 class="font-bold text-sm text-gray-800 dark:text-gray-100">${item.wasteType}</h4>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">${item.dateText}</p>
+                        <h4 class="font-bold text-sm text-gray-800 dark:text-gray-100 tracking-tight">${item.wasteType}</h4>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">${item.dateText}</p>
                     </div>
                 </div>
                 <div>
                     ${isSynced 
-                        ? '<span class="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded uppercase tracking-wide">Sync</span>'
-                        : '<span class="px-2 py-1 bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400 text-xs font-bold rounded uppercase tracking-wide">Pomiń</span>'
+                        ? '<span class="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold rounded uppercase tracking-wide">Sync</span>'
+                        : '<span class="px-2 py-1 bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400 text-[10px] font-bold rounded uppercase tracking-wide">Pomiń</span>'
                     }
                 </div>
             `;
+
+            if (!div) {
+                div = document.createElement('div');
+                div.id = uniqueId;
+                div.innerHTML = htmlContent;
+            } else {
+                // Update zawartości jeśli się zmieniła (głównie styl statusu)
+                if (div.className !== className) div.className = className;
+                div.innerHTML = htmlContent; // Odświeżamy wnętrze na wszelki wypadek (ikona, tekst)
+            }
+            div.className = className;
+
+            // To jest klucz do animacji: appendChild przesuwa istniejący element na koniec
+            // AutoAnimate wykrywa tę zmianę pozycji i ją animuje
             c.appendChild(div);
+            delete existingElements[uniqueId];
         });
+
+        // Usuń kafelki, których już nie ma w danych (np. po nowym pobraniu)
+        Object.values(existingElements).forEach(el => el.remove());
     }
 
     function parsePolishDate(dateText) {
