@@ -6,220 +6,211 @@
   <title>Harmonogram Wywozu Śmieci</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: { extend: { fontFamily: { sans: ['Poppins', 'sans-serif'] } } }
     }
   </script>
-
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
     .fade-in { animation: fadeIn 0.6s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .card-hover:hover { transform: translateY(-3px); transition: all 0.3s ease; }
-    
-    /* Scrollbar */
+    .card-hover:hover { transform: translateY(-2px); transition: all 0.3s ease; }
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     .dark ::-webkit-scrollbar-thumb { background: #475569; }
-    
-    /* Pasek postępu - animacja */
     .progress-transition { transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+    .rotate-180 { transform: rotate(180deg); }
+    .transition-transform { transition-property: transform; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
   </style>
 </head>
-<body class="bg-gradient-to-br from-slate-100 via-gray-100 to-zinc-100 dark:from-slate-950 dark:via-slate-900 dark:to-black min-h-screen text-gray-800 dark:text-gray-100 transition-colors duration-300">
+<body class="bg-gray-100 dark:bg-[#0f172a] min-h-screen text-gray-800 dark:text-gray-100 transition-colors duration-300 font-sans">
 
-  <div class="container mx-auto px-4 py-8 max-w-5xl">
+  <div class="container mx-auto px-4 py-8 max-w-7xl">
     
     <!-- Header -->
-    <div class="flex flex-col md:flex-row justify-between items-center mb-10 fade-in relative">
-        <div class="text-center md:text-left">
-            <div class="flex items-center gap-4 mb-2 justify-center md:justify-start">
-                <div class="p-3 rounded-full bg-white dark:bg-slate-800 shadow-md text-emerald-600 dark:text-emerald-400">
-                    <i class="fas fa-recycle text-4xl"></i>
-                </div>
-                <div>
-                    <h1 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white">Harmonogram Wywozu</h1>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Warszawa 19115 & Google Calendar</p>
-                </div>
+    <div class="flex justify-between items-center mb-8 fade-in">
+        <div class="flex items-center gap-4">
+            <div class="p-3 rounded-2xl bg-white dark:bg-slate-800 shadow-lg text-emerald-500">
+                <i class="fas fa-recycle text-3xl"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Harmonogram Wywozu</h1>
+                <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Warszawa 19115 & Google Calendar</p>
             </div>
         </div>
-        
-        <button onclick="toggleDarkMode()" class="mt-4 md:mt-0 p-3 rounded-full bg-white dark:bg-slate-800 shadow-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition group">
-            <i class="fas fa-sun text-yellow-500 text-xl hidden dark:inline group-hover:rotate-90 transition-transform duration-500"></i>
-            <i class="fas fa-moon text-slate-600 text-xl inline dark:hidden group-hover:-rotate-12 transition-transform duration-500"></i>
+        <button onclick="toggleDarkMode()" class="w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-md hover:bg-gray-50 dark:hover:bg-slate-700 transition flex items-center justify-center">
+            <i class="fas fa-moon dark:hidden text-slate-600"></i>
+            <i class="fas fa-sun hidden dark:block text-yellow-400"></i>
         </button>
     </div>
 
-    <div class="grid lg:grid-cols-3 gap-8">
+    <!-- ZMIANA 1: Usunięto 'items-start' stąd, aby kolumny miały równą wysokość -->
+    <div class="grid lg:grid-cols-12 gap-6">
         
-        <!-- Lewa kolumna: Sterowanie -->
-        <div class="lg:col-span-1 space-y-6 fade-in" style="animation-delay: 0.1s">
+        <!-- LEWA KOLUMNA -->
+        <!-- ZMIANA 2: Dodano 'flex flex-col', aby elementy układały się ładnie w pionie -->
+        <div class="lg:col-span-4 flex flex-col gap-6 fade-in" style="animation-delay: 0.1s">
             
-            <!-- Automat -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700 p-6 card-hover transition-colors duration-300">
-                <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 flex items-center">
-                        <i class="fas fa-robot text-purple-500 mr-3"></i> Automat
-                    </h2>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="autoModeToggle" class="sr-only peer" onchange="toggleAutoMode()">
-                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                    </label>
-                </div>
-                <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                    Sprawdza codziennie rano, czy wczoraj był odbiór śmieci i pobiera nowy harmonogram.
-                </p>
-                <div id="autoStatusText" class="text-xs font-bold mt-2 text-gray-400 uppercase tracking-wide">WYŁĄCZONY</div>
-            </div>
-
             <!-- Adres -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700 p-6 card-hover transition-colors duration-300">
-                <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4 flex items-center">
-                    <i class="fas fa-map-marker-alt text-red-500 mr-3"></i> Adres
-                </h2>
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-5">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-map-marker-alt text-red-500 mr-2"></i>
+                    <h2 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Adres</h2>
+                </div>
                 <input type="text" id="addressInput" 
-                    class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent mb-3 text-gray-800 dark:text-white placeholder-gray-400 transition-colors"
-                    value="Marszałkowska 1" />
+                    class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm font-medium transition-colors mb-3"
+                    value="Obozowa 90" />
                 <button onclick="saveAddress()" 
-                        class="w-full bg-gray-800 hover:bg-gray-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-sm font-medium py-2 rounded-lg transition border border-transparent dark:border-slate-600">
-                    <i class="fas fa-save mr-1"></i> Zapamiętaj adres
+                        class="w-full bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-bold py-3 rounded-lg transition uppercase tracking-wide">
+                    Zapisz Adres
                 </button>
             </div>
 
-            <!-- Status i Pasek Postępu -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700 p-6 card-hover transition-colors duration-300">
-                <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">Status</h2>
-                
-                <!-- PROGRESS BAR CONTAINER -->
-                <div id="progressContainer" class="hidden mb-6 bg-gray-50 dark:bg-slate-900 p-3 rounded-lg border border-gray-100 dark:border-slate-700">
-                    <div class="flex justify-between mb-1">
-                        <span id="progressText" class="text-xs font-medium text-emerald-600 dark:text-emerald-400">Inicjalizacja...</span>
-                        <span id="progressPercent" class="text-xs font-bold text-gray-600 dark:text-gray-400">0%</span>
+            <!-- Automat -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-5 flex justify-between items-center">
+                <div>
+                    <div class="flex items-center mb-1">
+                        <i class="fas fa-robot text-purple-500 mr-2"></i>
+                        <h2 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Automat</h2>
                     </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                        <div id="progressBar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-2.5 rounded-full progress-transition" style="width: 0%"></div>
-                    </div>
+                    <div id="autoStatusText" class="text-xs font-bold text-gray-400">WYŁĄCZONY</div>
                 </div>
-
-                <div class="space-y-3 text-sm">
-                    <div class="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-2">
-                        <span class="text-gray-500 dark:text-gray-400">Ostatnia akcja:</span>
-                        <span id="lastFetch" class="font-mono text-gray-800 dark:text-emerald-400">-</span>
-                    </div>
-                    <div class="flex justify-between border-b border-gray-100 dark:border-slate-700 pb-2">
-                        <span class="text-gray-500 dark:text-gray-400">Dodano wydarzeń:</span>
-                        <span id="eventsAdded" class="font-bold text-emerald-600 dark:text-emerald-400">0</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Konfiguracja Frakcji (Z przywróconymi ikonami) -->
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700 p-6 card-hover transition-colors duration-300">
-                <div class="flex justify-between items-center mb-2 cursor-pointer" onclick="document.getElementById('syncConfigContainer').classList.toggle('hidden')">
-                    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200 flex items-center">
-                        <i class="fas fa-sliders-h text-blue-500 mr-3"></i> Filtry
-                    </h2>
-                    <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
-                </div>
-                <div id="syncConfigContainer" class="space-y-2 mt-2"></div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="autoModeToggle" class="sr-only peer" onchange="toggleAutoMode()">
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
             </div>
 
-            <!-- Przyciski Akcji -->
-             <div class="space-y-3">
-                <button id="runBtn" onclick="runScraping()" 
-                        class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-emerald-500/20 transition transform active:scale-[0.98] flex items-center justify-center">
-                    <i class="fas fa-sync-alt mr-2 text-xl"></i> Uruchom Synchronizację
-                </button>
-                
-                <div class="grid grid-cols-2 gap-3">
-                    <button id="pdfBtn" onclick="openPdf(false)" disabled
-                            class="bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 text-gray-400 dark:text-slate-500 cursor-not-allowed font-medium py-3 px-4 rounded-xl transition flex items-center justify-center">
-                        <i class="fas fa-file-pdf mr-2"></i> Oryginał
-                    </button>
-                    <button id="pdfLabeledBtn" onclick="openPdf(true)" disabled
-                            class="bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 text-gray-400 dark:text-slate-500 cursor-not-allowed font-medium py-3 px-4 rounded-xl transition flex items-center justify-center">
-                        <i class="fas fa-magic mr-2"></i> Opisany
-                    </button>
+            <!-- Filtry (Accordion) -->
+            <!-- Tutaj nie dajemy flex-grow, bo to Filtry wyznaczają wysokość -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden h-fit">
+                <div class="p-5 flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition" onclick="toggleFiltersAccordion()">
+                    <div class="flex items-center">
+                        <i class="fas fa-sliders-h text-blue-500 mr-2"></i>
+                        <h2 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Filtry</h2>
+                    </div>
+                    <i id="filterChevron" class="fas fa-chevron-down text-gray-400 text-xs transition-transform duration-300"></i>
                 </div>
-                
-                <button onclick="viewLogs()" 
-                        class="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 font-medium py-3 px-4 rounded-xl transition flex items-center justify-center">
-                    <i class="fas fa-terminal mr-2"></i> Logi
-                </button>
-             </div>
+                <div id="syncConfigContainer" class="px-5 pb-5 space-y-2 hidden border-t border-gray-100 dark:border-slate-700 pt-4"></div>
+            </div>
 
         </div>
 
-        <!-- Prawa kolumna: Wyniki -->
-        <div class="lg:col-span-2 fade-in" style="animation-delay: 0.2s">
+        <!-- PRAWA KOLUMNA -->
+        <!-- ZMIANA 3: Dodano 'flex flex-col', aby elementy się rozciągały -->
+        <div class="lg:col-span-8 flex flex-col gap-6 fade-in" style="animation-delay: 0.2s">
             
-            <div id="errorAlert" class="hidden bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 text-red-700 dark:text-red-400 p-4 mb-6 rounded shadow-sm">
-                <div class="flex">
-                    <div class="mr-3"><i class="fas fa-exclamation-triangle"></i></div>
-                    <div><h3 class="font-bold">Błąd</h3><p id="errorMessage" class="text-sm"></p></div>
+            <!-- PANEL STEROWANIA -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 flex-shrink-0">
+                
+                <!-- Górny pasek info -->
+                <div class="flex justify-between items-end mb-6 pb-4 border-b border-gray-100 dark:border-slate-700">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-1">Status Synchronizacji</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Ostatnia akcja: <span id="lastFetch" class="font-mono text-emerald-500 font-bold">-</span></p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Dodano wydarzeń</p>
+                        <p id="eventsAdded" class="text-2xl font-bold text-emerald-500">0</p>
+                    </div>
+                </div>
+
+                <!-- Pasek Postępu -->
+                <div id="progressContainer" class="hidden mb-6 bg-gray-50 dark:bg-slate-900 p-3 rounded-lg border border-gray-100 dark:border-slate-700">
+                    <div class="flex justify-between mb-1 text-xs font-bold"><span id="progressText" class="text-emerald-600">Start...</span><span id="progressPercent">0%</span></div>
+                    <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700"><div id="progressBar" class="bg-emerald-500 h-2 rounded-full progress-transition" style="width: 0%"></div></div>
+                </div>
+
+                <!-- Error Alert -->
+                <div id="errorAlert" class="hidden mb-6 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 text-red-700 dark:text-red-400 p-4 rounded text-sm">
+                    <p class="font-bold mb-1"><i class="fas fa-exclamation-circle mr-2"></i>Wystąpił błąd</p> 
+                    <span id="errorMessage"></span>
+                </div>
+
+                <!-- SIATKA PRZYCISKÓW -->
+                <div class="grid grid-cols-3 gap-4">
+                    <button id="runBtn" onclick="runScraping()" 
+                            class="col-span-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-6 rounded-lg shadow-lg shadow-emerald-500/20 transition transform active:scale-[0.99] flex items-center justify-center gap-3">
+                        <i class="fas fa-sync-alt text-lg"></i> 
+                        <span>SYNCHRONIZUJ TERAZ</span>
+                    </button>
+
+                    <button id="pdfBtn" onclick="openPdf(false)" disabled
+                            class="col-span-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium">
+                        <i class="fas fa-file-pdf text-red-500 text-lg"></i>
+                        <span>Oryginał</span>
+                    </button>
+                    
+                    <button id="pdfLabeledBtn" onclick="openPdf(true)" disabled
+                            class="col-span-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium">
+                        <i class="fas fa-magic text-purple-500 text-lg"></i>
+                        <span>Opisany</span>
+                    </button>
+
+                    <button onclick="viewLogs()" 
+                            class="col-span-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 py-3 rounded-lg transition flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium">
+                        <i class="fas fa-terminal text-gray-500 text-lg"></i>
+                        <span>Logi</span>
+                    </button>
                 </div>
             </div>
 
-            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700 p-8 min-h-[600px] transition-colors duration-300">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                    <h2 class="text-2xl font-bold text-gray-800 dark:text-white flex items-center">
-                        <i class="fas fa-calendar-alt text-emerald-500 mr-3"></i> Znalezione terminy
-                    </h2>
-                    
-                    <div class="text-xs flex gap-3 bg-gray-50 dark:bg-slate-900 p-2 rounded-lg">
-                        <span class="flex items-center text-gray-600 dark:text-gray-300"><i class="fas fa-circle text-emerald-500 text-[10px] mr-1.5"></i> Synchronizowane</span>
-                        <span class="flex items-center text-gray-400 dark:text-gray-500"><i class="fas fa-circle text-gray-300 dark:text-slate-600 text-[10px] mr-1.5"></i> Pominięte</span>
-                    </div>
-                </div>
-                
-                <div id="scheduleContainer" class="space-y-3">
-                    <div class="flex flex-col items-center justify-center py-24 text-gray-400 dark:text-slate-600 opacity-60">
-                        <i class="fas fa-robot text-6xl mb-4"></i>
-                        <p class="text-lg font-medium">Lista jest pusta</p>
+            <!-- LISTA TERMINÓW -->
+            <!-- ZMIANA 4: Dodano 'flex-grow', aby ten kontener wypełniał pozostałą przestrzeń w dół -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 flex-grow flex flex-col">
+                <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-6 flex items-center">
+                    <i class="far fa-calendar-alt mr-2"></i> Znalezione terminy
+                </h3>
+                <!-- scheduleContainer wypełnia wnętrze karty -->
+                <div id="scheduleContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="col-span-full flex flex-col items-center justify-center py-16 text-gray-400 dark:text-slate-600">
+                        <i class="fas fa-robot text-6xl mb-4 opacity-20"></i>
+                        <p class="text-sm font-medium">Brak danych harmonogramu</p>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 
     <!-- Modale (Logs) -->
-    <div id="logsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 rounded-xl shadow-2xl w-full max-w-6xl h-[85vh] flex flex-col border border-slate-700 overflow-hidden">
+    <div id="logsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 transition-opacity" onclick="if(event.target.id=='logsModal') closeModal()">
+        <div class="bg-slate-900 rounded-xl w-full max-w-5xl h-[80vh] flex flex-col border border-slate-700 shadow-2xl overflow-hidden transform scale-100">
             <div class="flex justify-between items-center p-4 bg-slate-800 border-b border-slate-700">
-                <h3 class="text-lg font-mono text-emerald-400 flex items-center"><i class="fas fa-terminal mr-2"></i> Console Output</h3>
+                <h3 class="text-emerald-400 font-mono text-sm uppercase tracking-wider"><i class="fas fa-terminal mr-2"></i> Logi Systemowe</h3>
                 <div class="flex gap-2">
-                    <button onclick="copyLogs()" class="px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm"><i class="fas fa-copy mr-1"></i> Kopiuj</button>
-                    <button onclick="closeModal()" class="px-3 py-1.5 rounded hover:bg-red-500/20 text-slate-400 hover:text-red-400"><i class="fas fa-times text-xl"></i></button>
+                    <button onclick="copyLogs()" class="text-xs px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-200 transition">Kopiuj</button>
+                    <button onclick="closeModal()" class="text-slate-400 hover:text-white px-2"><i class="fas fa-times"></i></button>
                 </div>
             </div>
-            <textarea id="logsContent" readonly class="w-full h-full bg-[#0d1117] text-slate-300 font-mono text-sm p-6 resize-none focus:outline-none leading-relaxed"></textarea>
+            <textarea id="logsContent" readonly class="w-full h-full bg-[#0d1117] text-slate-300 font-mono text-xs p-6 resize-none focus:outline-none leading-relaxed"></textarea>
         </div>
     </div>
 
   </div>
 
   <script>
+    // ... (Tu wklej dokładnie ten sam JavaScript co w poprzedniej wersji, bez zmian) ...
     // --- KONFIGURACJA ---
     const wasteTypesConfig = {
-      "Papier": { color: "blue", icon: "fas fa-newspaper" },
-      "Metale i tworzywa sztuczne": { color: "yellow", icon: "fas fa-cube" },
-      "Szkło": { color: "green", icon: "fas fa-glass-cheers" },
-      "Bio": { color: "brown", icon: "fas fa-seedling" },
-      "Zmieszane": { color: "gray", icon: "fas fa-trash" },
-      "Zielone": { color: "lime", icon: "fas fa-tree" }
+      "Papier": { icon: "fas fa-newspaper" },
+      "Metale i tworzywa sztuczne": { icon: "fas fa-cube" },
+      "Szkło": { icon: "fas fa-glass-cheers" },
+      "Bio": { icon: "fas fa-leaf" }, 
+      "Zmieszane": { icon: "fas fa-trash-alt" },
+      "Zielone": { icon: "fas fa-tree" }
     };
 
     const wasteColors = {
-      "Papier": "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
-      "Metale i tworzywa sztuczne": "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800",
-      "Szkło": "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800",
-      "Bio": "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800",
-      "Zmieszane": "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600",
-      "Zielone": "bg-lime-100 text-lime-800 border-lime-200 dark:bg-lime-900/30 dark:text-lime-300 dark:border-lime-800"
+      "Papier": "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800",
+      "Metale i tworzywa sztuczne": "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800",
+      "Szkło": "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800",
+      "Bio": "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800",
+      "Zmieszane": "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600",
+      "Zielone": "bg-lime-50 text-lime-700 border-lime-200 dark:bg-lime-900/20 dark:text-lime-300 dark:border-lime-800"
     };
 
     let currentScheduleData = [];
@@ -227,19 +218,48 @@
     let syncPreferences = {}; 
     let pollingInterval = null;
 
-    // --- INICJALIZACJA ---
     document.addEventListener('DOMContentLoaded', () => {
         initTheme();
         loadAddress();
         initSyncPreferences();
         renderSyncConfig();
+        restoreFilterState();
         loadLastState(); 
-        
-        // Sprawdź czy coś nie działa w tle po odświeżeniu
         checkRunningProcess();
     });
 
-    // --- LOGIKA PASKA POSTĘPU ---
+    // --- AKORDEON FILTRÓW ---
+    function toggleFiltersAccordion() {
+        const container = document.getElementById('syncConfigContainer');
+        const chevron = document.getElementById('filterChevron');
+        const isHidden = container.classList.contains('hidden');
+        
+        if (isHidden) {
+            container.classList.remove('hidden');
+            chevron.classList.add('rotate-180');
+            localStorage.setItem('filtersExpanded', 'true');
+        } else {
+            container.classList.add('hidden');
+            chevron.classList.remove('rotate-180');
+            localStorage.setItem('filtersExpanded', 'false');
+        }
+    }
+
+    function restoreFilterState() {
+        const expanded = localStorage.getItem('filtersExpanded') === 'true';
+        const container = document.getElementById('syncConfigContainer');
+        const chevron = document.getElementById('filterChevron');
+        
+        if (expanded) {
+            container.classList.remove('hidden');
+            chevron.classList.add('rotate-180');
+        } else {
+            container.classList.add('hidden');
+            chevron.classList.remove('rotate-180');
+        }
+    }
+
+    // --- LOGIKA APLIKACJI ---
 
     async function runScraping() {
         const address = document.getElementById('addressInput').value;
@@ -249,16 +269,15 @@
         const btn = document.getElementById('runBtn');
         const alertEl = document.getElementById('errorAlert');
         btn.disabled = true;
-        btn.classList.add('opacity-50', 'cursor-not-allowed');
+        btn.classList.add('opacity-75', 'cursor-not-allowed');
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> PRZETWARZANIE...';
         alertEl.classList.add('hidden');
         
-        // Wyłącz przyciski PDF podczas pracy
         updatePdfButtons(false, false);
 
         const allowedTypes = Object.keys(syncPreferences).filter(key => syncPreferences[key]);
 
         try {
-            // 1. Wyślij żądanie START
             const res = await fetch('/api/sync', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -267,7 +286,6 @@
             const data = await res.json();
             
             if(data.status === 'started' || data.status === 'running') {
-                // 2. Rozpocznij odpytywanie (Polling)
                 startPolling();
             } else {
                 throw new Error(data.message || "Błąd uruchamiania");
@@ -275,9 +293,15 @@
         } catch(e) {
             console.error(e);
             alert("Nie udało się uruchomić procesu: " + e.message);
-            btn.disabled = false;
-            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            resetBtn();
         }
+    }
+
+    function resetBtn() {
+        const btn = document.getElementById('runBtn');
+        btn.disabled = false;
+        btn.classList.remove('opacity-75', 'cursor-not-allowed');
+        btn.innerHTML = '<i class="fas fa-sync-alt text-lg"></i><span>SYNCHRONIZUJ TERAZ</span>';
     }
 
     function startPolling() {
@@ -295,20 +319,13 @@
                 const res = await fetch('/api/progress');
                 const state = await res.json();
 
-                // Aktualizacja UI
                 progressBar.style.width = state.percent + '%';
                 progressText.innerText = state.message;
                 progressPercent.innerText = state.percent + '%';
 
                 if (state.status === 'finished' || state.status === 'error') {
                     clearInterval(pollingInterval);
-                    
-                    // Odblokuj UI
-                    const btn = document.getElementById('runBtn');
-                    btn.disabled = false;
-                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
-
-                    // Przeładuj wyniki
+                    resetBtn();
                     await loadLastState();
 
                     if (state.status === 'error') {
@@ -317,34 +334,28 @@
                         alertEl.classList.remove('hidden');
                         progressText.classList.add('text-red-500');
                     } else {
-                        // Sukces - ukryj pasek po chwili
-                        setTimeout(() => {
-                           progressContainer.classList.add('hidden');
-                        }, 5000);
+                        setTimeout(() => progressContainer.classList.add('hidden'), 5000);
                     }
                 }
-            } catch(e) {
-                console.error("Błąd odpytywania:", e);
-            }
-        }, 1000); // Co 1 sekundę
+            } catch(e) { console.error("Poll error", e); }
+        }, 1000);
     }
 
     async function checkRunningProcess() {
-        // Sprawdza przy starcie strony czy coś się nie mieli w tle
         try {
             const res = await fetch('/api/progress');
             const state = await res.json();
             if(state.status === 'running') {
                 const btn = document.getElementById('runBtn');
                 btn.disabled = true;
-                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                btn.classList.add('opacity-75', 'cursor-not-allowed');
+                btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> WZNAWIANIE...';
                 startPolling();
             }
         } catch(e) {}
     }
 
-
-    // --- POZOSTAŁA LOGIKA ---
+    // --- RENDERING I POMOCNICZE ---
 
     async function toggleAutoMode() {
         const toggle = document.getElementById('autoModeToggle');
@@ -353,19 +364,15 @@
         
         statusText.textContent = enable ? "AKTYWNY" : "WYŁĄCZONY";
         statusText.className = enable 
-            ? "text-xs font-bold mt-2 text-purple-600 dark:text-purple-400 uppercase tracking-wide"
-            : "text-xs font-bold mt-2 text-gray-400 uppercase tracking-wide";
+            ? "text-xs font-bold mt-1 text-purple-600 dark:text-purple-400 uppercase tracking-wide"
+            : "text-xs font-bold mt-1 text-gray-400 uppercase tracking-wide";
         
-        try {
-            await fetch('/api/toggle-auto', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ enable: enable })
-            });
-        } catch(e) { console.error(e); }
+        await fetch('/api/toggle-auto', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enable: enable })
+        });
     }
 
-    // Theme & Address
     function initTheme() {
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -391,13 +398,12 @@
         if(val) {
             localStorage.setItem('wasteAddress', val);
             const btn = document.querySelector('button[onclick="saveAddress()"]');
-            const oldHtml = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-check mr-1"></i> Zapisano';
-            setTimeout(() => { btn.innerHTML = oldHtml; }, 2000);
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> ZAPISANO';
+            setTimeout(() => { btn.innerHTML = original; }, 2000);
         }
     }
 
-    // Filters
     function initSyncPreferences() {
         const saved = localStorage.getItem('wasteSyncPrefs');
         if (saved) {
@@ -405,7 +411,6 @@
         } else {
             Object.keys(wasteTypesConfig).forEach(key => syncPreferences[key] = true);
         }
-        // Cleanup old keys
         const validKeys = Object.keys(wasteTypesConfig);
         const newPrefs = {};
         validKeys.forEach(k => newPrefs[k] = syncPreferences[k] !== undefined ? syncPreferences[k] : true);
@@ -419,15 +424,15 @@
         Object.keys(wasteTypesConfig).forEach(type => {
             const isChecked = syncPreferences[type];
             const div = document.createElement('label');
-            div.className = "flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer transition border border-transparent hover:border-gray-200 dark:hover:border-slate-600 group";
+            div.className = "flex items-center space-x-3 p-2 rounded hover:bg-gray-50 dark:hover:bg-slate-700/50 cursor-pointer transition group";
             div.innerHTML = `
                 <div class="relative flex items-center">
-                    <input type="checkbox" class="peer w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 border-gray-300 dark:border-slate-500 dark:bg-slate-700 dark:checked:bg-emerald-500" 
+                    <input type="checkbox" class="peer w-4 h-4 text-emerald-600 rounded border-gray-300 dark:border-slate-600 focus:ring-emerald-500 dark:bg-slate-800" 
                         ${isChecked ? 'checked' : ''} 
                         onchange="toggleSyncPref('${type}', this.checked)">
                 </div>
-                <span class="text-sm text-gray-700 dark:text-gray-300 select-none flex-grow group-hover:text-gray-900 dark:group-hover:text-white transition">${type}</span>
-                <i class="${wasteTypesConfig[type].icon} text-gray-400 dark:text-slate-500 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition"></i>
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-300 select-none flex-grow group-hover:text-gray-900 dark:group-hover:text-white transition">${type}</span>
+                <i class="${wasteTypesConfig[type].icon} text-gray-400 dark:text-slate-600 text-xs"></i>
             `;
             container.appendChild(div);
         });
@@ -436,24 +441,21 @@
     function toggleSyncPref(type, isChecked) {
         syncPreferences[type] = isChecked;
         localStorage.setItem('wasteSyncPrefs', JSON.stringify(syncPreferences));
-        if (currentScheduleData.length > 0) renderSchedule();
+        if (currentScheduleData.length > 0) renderSchedule(currentScheduleData);
     }
 
     function updatePdfButtons(originalAvail, labeledAvail) {
         const btn1 = document.getElementById('pdfBtn');
         const btn2 = document.getElementById('pdfLabeledBtn');
         
-        // Oryginał
-        btn1.disabled = !originalAvail;
-        btn1.className = originalAvail 
-            ? "bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 font-medium py-3 px-4 rounded-xl transition hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer flex items-center justify-center"
-            : "bg-white dark:bg-slate-800 border dark:border-slate-600 py-3 px-4 rounded-xl text-gray-400 dark:text-slate-500 cursor-not-allowed text-sm font-medium flex items-center justify-center";
+        const enabledClass = "bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 cursor-pointer";
+        const disabledClass = "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-400 dark:text-slate-600";
 
-        // Opisany
+        btn1.disabled = !originalAvail;
+        btn1.className = `col-span-1 py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium border ${originalAvail ? enabledClass : disabledClass}`;
+
         btn2.disabled = !labeledAvail;
-        btn2.className = labeledAvail 
-            ? "bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-900 text-purple-600 dark:text-purple-400 font-medium py-3 px-4 rounded-xl transition hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer flex items-center justify-center"
-            : "bg-white dark:bg-slate-800 border dark:border-slate-600 py-3 px-4 rounded-xl text-gray-400 dark:text-slate-500 cursor-not-allowed text-sm font-medium flex items-center justify-center";
+        btn2.className = `col-span-1 py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium border ${labeledAvail ? enabledClass : disabledClass}`;
     }
 
     function openPdf(labeled) {
@@ -461,21 +463,17 @@
         window.open(`/static/${filename}?t=${Date.now()}`, '_blank');
     }
 
-    // State Loading
     async function loadLastState() {
         try {
             const resp = await fetch('/api/last-state');
             const data = await resp.json();
             
-            // Auto Toggle UI
             const autoToggle = document.getElementById('autoModeToggle');
             const autoStatus = document.getElementById('autoStatusText');
             if(data.auto_mode !== undefined) {
                 autoToggle.checked = data.auto_mode;
                 autoStatus.textContent = data.auto_mode ? "AKTYWNY" : "WYŁĄCZONY";
-                autoStatus.className = data.auto_mode 
-                    ? "text-xs font-bold mt-2 text-purple-600 dark:text-purple-400 uppercase tracking-wide"
-                    : "text-xs font-bold mt-2 text-gray-400 uppercase tracking-wide";
+                autoStatus.className = data.auto_mode ? "text-xs font-bold mt-1 text-purple-600 dark:text-purple-400" : "text-xs font-bold mt-1 text-gray-400";
             }
 
             if (data.timestamp) document.getElementById('lastFetch').textContent = data.timestamp;
@@ -485,21 +483,22 @@
                 currentLogs = data.logs || [];
                 document.getElementById('eventsAdded').textContent = data.added_events || 0;
                 updatePdfButtons(data.pdf_available, data.pdf_labeled_available);
-                renderSchedule();
+                renderSchedule(data.schedule);
             }
         } catch(e) {}
     }
 
-    // Rendering
-    function renderSchedule() {
-        const container = document.getElementById('scheduleContainer');
-        container.innerHTML = '';
-        if (!currentScheduleData || currentScheduleData.length === 0) {
-            container.innerHTML = '<div class="flex flex-col items-center justify-center py-24 text-gray-400 dark:text-slate-600 opacity-60"><i class="fas fa-robot text-6xl mb-4"></i><p class="text-lg font-medium">Lista jest pusta</p></div>';
-            return;
+    function renderSchedule(data) {
+        const c = document.getElementById('scheduleContainer');
+        c.innerHTML = '';
+        if(!data || !data.length) {
+            c.className = "col-span-full"; 
+            return c.innerHTML = '<div class="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-slate-600"><i class="fas fa-robot text-6xl mb-4 opacity-20"></i><p class="text-sm font-medium">Brak danych harmonogramu</p></div>';
         }
+        
+        c.className = "grid grid-cols-1 md:grid-cols-2 gap-4"; 
 
-        const sorted = [...currentScheduleData].sort((a, b) => {
+        const sorted = [...data].sort((a, b) => {
             const isSyncedA = syncPreferences[a.wasteType];
             const isSyncedB = syncPreferences[b.wasteType];
             if (isSyncedA && !isSyncedB) return -1;
@@ -507,40 +506,32 @@
             return parsePolishDate(a.dateText) - parsePolishDate(b.dateText);
         });
 
-        sorted.forEach((item, index) => {
+        sorted.forEach((item) => {
             const isSynced = syncPreferences[item.wasteType];
-            const div = document.createElement('div');
-            const baseClass = "flex items-center justify-between p-4 rounded-xl border-l-[6px] shadow-sm transition-all duration-300 fade-in mb-3";
-            const activeStyle = "bg-white dark:bg-slate-700/50 border-emerald-500 hover:shadow-md hover:translate-x-1";
-            const inactiveStyle = "bg-gray-50 dark:bg-slate-800/50 border-gray-300 dark:border-slate-600 opacity-60 grayscale-[0.8]";
+            const activeStyle = "bg-white dark:bg-slate-700 border-l-4 border-emerald-500 shadow-sm";
+            const inactiveStyle = "bg-gray-50 dark:bg-slate-800/50 border-l-4 border-gray-300 dark:border-slate-600 opacity-60";
 
-            div.className = `${baseClass} ${isSynced ? activeStyle : inactiveStyle}`;
-            div.style.animationDelay = `${index * 0.05}s`;
+            const div = document.createElement('div');
+            div.className = `p-4 rounded-lg flex justify-between items-center ${isSynced ? activeStyle : inactiveStyle} transition-all`;
 
             div.innerHTML = `
                 <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-full flex items-center justify-center bg-gray-100 dark:bg-slate-800 text-xl ${isSynced ? 'text-gray-700 dark:text-white' : 'text-gray-400'}">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100 dark:bg-slate-800 ${isSynced ? 'text-gray-600 dark:text-gray-300' : 'text-gray-400'}">
                         <i class="${wasteTypesConfig[item.wasteType]?.icon || 'fas fa-trash'}"></i>
                     </div>
                     <div>
-                        <h4 class="font-bold text-gray-800 dark:text-gray-100 text-lg">${item.wasteType}</h4>
-                        <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                            <i class="far fa-calendar mr-2 opacity-70"></i>
-                            ${item.dateText}
-                        </div>
+                        <h4 class="font-bold text-sm text-gray-800 dark:text-gray-100">${item.wasteType}</h4>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">${item.dateText}</p>
                     </div>
                 </div>
-                <div class="flex flex-col items-end gap-2">
-                    <span class="text-xs px-3 py-1 rounded-full border font-medium ${wasteColors[item.wasteType] || 'bg-gray-200 dark:bg-slate-700'}">
-                        ${item.dateText.split(' ')[0]}
-                    </span>
+                <div>
                     ${isSynced 
-                        ? '<span class="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 tracking-wider flex items-center"><i class="fas fa-check mr-1"></i>Sync</span>' 
-                        : '<span class="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider flex items-center"><i class="fas fa-ban mr-1"></i>Ominięto</span>'
+                        ? '<span class="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold rounded uppercase tracking-wide">Sync</span>'
+                        : '<span class="px-2 py-1 bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400 text-[10px] font-bold rounded uppercase tracking-wide">Pomiń</span>'
                     }
                 </div>
             `;
-            container.appendChild(div);
+            c.appendChild(div);
         });
     }
 
@@ -554,12 +545,9 @@
         return new Date(year, month, day);
     }
 
-    // Logs Modal
     function viewLogs() {
-        const modal = document.getElementById('logsModal');
-        const textarea = document.getElementById('logsContent');
-        textarea.value = (currentLogs && currentLogs.length > 0) ? currentLogs.join('\n') : "Brak logów.";
-        modal.classList.remove('hidden');
+        document.getElementById('logsContent').value = currentLogs.join('\n') || "Brak logów.";
+        document.getElementById('logsModal').classList.remove('hidden');
     }
     function copyLogs() {
         document.getElementById('logsContent').select();
@@ -568,9 +556,6 @@
     function closeModal() {
         document.getElementById('logsModal').classList.add('hidden');
     }
-    document.getElementById('logsModal').addEventListener('click', (e) => {
-        if(e.target.id === 'logsModal') closeModal();
-    });
   </script>
 </body>
 </html>
