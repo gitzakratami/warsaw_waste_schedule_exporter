@@ -77,7 +77,7 @@ def reset_progress():
         progress_state["status"] = "running"
         progress_state["result"] = None
 
-# --- LOGIKA PRZETWARZANIA PDF (POPRAWIONA WERSJA) ---
+# --- LOGIKA PRZETWARZANIA PDF ---
 
 def color_distance(c1, c2):
     return math.sqrt(sum((a - b) ** 2 for a, b in zip(c1, c2)))
@@ -103,17 +103,14 @@ def find_matching_fraction(pix, bbox, legend):
     return None
 
 def process_pdf_labels(input_pdf_path, output_pdf_path):
-    """Nakłada etykiety na PDF (Wersja z poprawną detekcją kolizji)."""
+    """Nakłada etykiety na PDF."""
     try:
         doc = fitz.open(input_pdf_path)
         
         FONT_SIZE = 10
         
-        # --- PRZYGOTOWANIE CZCIONKI ---
-        # 1. Próba Windows (dla testów lokalnych)
+        # Obsługa czcionek (Windows lokalnie / Linux Docker)
         font_path = "C:/Windows/Fonts/arialbd.ttf"
-        
-        # 2. Jeśli nie ma (jesteśmy na Linuxie/Dockerze), użyj systemowej
         if not os.path.exists(font_path):
             font_path = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
         
@@ -127,7 +124,7 @@ def process_pdf_labels(input_pdf_path, output_pdf_path):
             except Exception as e:
                 print(f"[PDF] Błąd ładowania czcionki: {e}")
         else:
-            print(f"[PDF] UWAGA: Nie znaleziono czcionki: {font_path}")
+            print("[PDF] Brak czcionki Arial/Liberation. Tekst może być domyślny.")
 
         # DEFINICJA KOLORÓW
         legend = [
@@ -171,12 +168,11 @@ def process_pdf_labels(input_pdf_path, output_pdf_path):
                 if use_custom_font:
                     text_len = custom_font.text_length(text_str, fontsize=FONT_SIZE)
                 else:
-                    # Fallback dla braku czcionki
                     text_len = fitz.get_text_length(text_str, fontsize=FONT_SIZE, fontname="Helvetica-Bold")
 
                 right_edge_of_text = icon["rect"].x0 - 5
                 
-                # --- KOLIZJE (Poprawiona logika) ---
+                # --- KOLIZJE ---
                 collision = True
                 while collision:
                     collision = False
@@ -190,7 +186,6 @@ def process_pdf_labels(input_pdf_path, output_pdf_path):
                     for obstacle in page_icons:
                         if obstacle is icon: continue 
                         if text_rect.intersects(obstacle["rect"]):
-                            # Przesuwamy w lewo od przeszkody
                             right_edge_of_text = obstacle["rect"].x0 - 5
                             collision = True
                             break 
@@ -198,11 +193,10 @@ def process_pdf_labels(input_pdf_path, output_pdf_path):
                 final_x = right_edge_of_text - text_len
                 final_y = icon["rect"].y1 - 2
                 
-                # --- ZAPIS ---
+                # --- WPISYWANIE DO BUFORA ---
                 if use_custom_font:
                     writer.append((final_x, final_y), text_str, font=custom_font, fontsize=FONT_SIZE)
                 else:
-                    # Metoda awaryjna (może nie obsługiwać PL znaków idealnie, ale zadziała)
                     page.insert_text((final_x, final_y), text_str, fontsize=FONT_SIZE, fontname="Helvetica-Bold", color=(0,0,0))
 
             if use_custom_font:
@@ -255,7 +249,7 @@ def load_state():
         except: pass
     return {
         "schedule": [], "logs": [], 
-        "pdf_available": False, "pdf_labeled_available": False, # Nowa flaga
+        "pdf_available": False, "pdf_labeled_available": False,
         "auto_mode": False, "last_auto_run": "", "saved_address": "Marszałkowska 1"
     }
 
@@ -278,12 +272,13 @@ def run_full_process(address, allowed_types):
 
     def log(msg):
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-        print(f"[{timestamp}] {msg}")
-        results["logs"].append(f"[{timestamp}] {msg}")
+        formatted_msg = f"[{timestamp}] {msg}"
+        print(formatted_msg)
+        results["logs"].append(formatted_msg)
 
     try:
         update_progress(5, "Uruchamianie przeglądarki...")
-        log(f"Start: {address}")
+        log(f"Start synchronizacji dla: {address}")
         
         chrome_options = Options()
         chrome_options.add_argument("--headless=new")
@@ -302,7 +297,7 @@ def run_full_process(address, allowed_types):
         schedule_data = [] 
         
         try:
-            update_progress(15, "Łączenie ze stroną...")
+            update_progress(15, "Łączenie ze stroną 19115...")
             driver.get(TARGET_URL)
             wait = WebDriverWait(driver, 20)
 
@@ -319,7 +314,7 @@ def run_full_process(address, allowed_types):
 
             try:
                 wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "li.yui3-aclist-item"))).click()
-            except: raise Exception("Nie znaleziono adresu")
+            except: raise Exception("Nie znaleziono adresu w podpowiedziach")
 
             wait.until(EC.element_to_be_clickable((By.ID, "buttonNext"))).click()
             time.sleep(3)
@@ -327,7 +322,6 @@ def run_full_process(address, allowed_types):
             # --- PDF ---
             update_progress(40, "Pobieranie PDF...")
             try:
-                # Czyścimy stare PDF
                 for f in glob.glob(os.path.join(STATIC_DIR, "*.pdf")): os.remove(f)
                 
                 wait.until(EC.element_to_be_clickable((By.ID, "downloadPdfLink"))).click()
@@ -346,13 +340,12 @@ def run_full_process(address, allowed_types):
                     original_pdf = os.path.join(STATIC_DIR, "harmonogram.pdf")
                     labeled_pdf = os.path.join(STATIC_DIR, "harmonogram_opisany.pdf")
                     
-                    # Zmiana nazwy pobranego
                     if os.path.exists(original_pdf) and original_pdf != downloaded_file: os.remove(original_pdf)
                     os.rename(downloaded_file, original_pdf)
                     results["pdf_available"] = True
-                    log("PDF pobrany.")
+                    log("PDF pobrany pomyślnie.")
 
-                    # --- GENEROWANIE OPISANEGO PDF ---
+                    # Etykietowanie
                     update_progress(50, "Generowanie opisów na PDF...")
                     log("Nakładanie etykiet na PDF...")
                     if process_pdf_labels(original_pdf, labeled_pdf):
@@ -374,12 +367,14 @@ def run_full_process(address, allowed_types):
                     if txt:
                         schedule_data.append((txt, waste_name))
                         results["schedule"].append({"dateText": txt, "wasteType": waste_name})
+                        # PRZYWRÓCONY LOG
+                        log(f" -> Znaleziono: {waste_name} ({txt})")
                 except: pass
 
         finally:
             driver.quit()
 
-        if not schedule_data: raise Exception("Nie udało się pobrać dat.")
+        if not schedule_data: raise Exception("Nie udało się pobrać żadnych dat ze strony.")
 
         # --- GOOGLE CALENDAR ---
         update_progress(80, "Wysyłanie do Google Calendar...")
@@ -397,6 +392,7 @@ def run_full_process(address, allowed_types):
                 if not page_token: break
             
             if not calendar_id:
+                log(f"Tworzenie kalendarza: {CALENDAR_NAME}")
                 created_cal = service_google.calendars().insert(body={'summary': CALENDAR_NAME, 'timeZone': 'Europe/Warsaw'}).execute()
                 calendar_id = created_cal['id']
 
@@ -406,7 +402,11 @@ def run_full_process(address, allowed_types):
             count = 0
             for i, (date_text, waste_type) in enumerate(schedule_data):
                 update_progress(80 + int((i/len(schedule_data))*15), f"Przetwarzanie: {waste_type}")
-                if waste_type not in allowed_types: continue
+                
+                if waste_type not in allowed_types: 
+                    log(f" -> Pominięto (filtr): {waste_type}")
+                    continue
+                
                 event_date = parse_polish_date(date_text)
                 if not event_date: continue
                 event_date_str = event_date.isoformat()
@@ -424,11 +424,15 @@ def run_full_process(address, allowed_types):
                         'reminders': {'useDefault': False, 'overrides': [{'method': 'popup', 'minutes': 300}]}
                     }
                     service_google.events().insert(calendarId=calendar_id, body=body).execute()
+                    # PRZYWRÓCONY LOG
+                    log(f" -> DODANO: {waste_type} ({event_date_str})")
                     count += 1
+                else:
+                    log(f" -> Już istnieje: {waste_type} ({event_date_str})")
             
             results["added_events"] = count
         else:
-            log("Błąd autoryzacji Google.")
+            log("Błąd autoryzacji Google - brak kluczy.")
 
         results['timestamp'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         save_state(results)
@@ -440,6 +444,7 @@ def run_full_process(address, allowed_types):
             progress_state["result"] = results
 
     except Exception as e:
+        log(f"BŁĄD KRYTYCZNY: {str(e)}")
         with progress_lock:
             progress_state["status"] = "error"
             progress_state["message"] = str(e)
