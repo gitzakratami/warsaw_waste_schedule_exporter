@@ -196,7 +196,8 @@ def load_state():
         try:
             with open(STATE_FILE, 'r', encoding='utf-8') as f: return json.load(f)
         except: pass
-    return {"schedule": [], "logs": [], "pdf_available": False, "pdf_labeled_available": False, "auto_mode": False, "last_auto_run": "", "saved_address": "Marszałkowska 1"}
+    # --- WYCZYSZCZONO DOMYŚLNY ADRES ---
+    return {"schedule": [], "logs": [], "pdf_available": False, "pdf_labeled_available": False, "auto_mode": False, "last_auto_run": "", "saved_address": ""}
 
 def save_state(state):
     try:
@@ -222,9 +223,10 @@ def run_full_process(address, allowed_types):
         results["logs"].append(formatted_msg)
 
     try:
-        # UI: 5% - Start
         update_progress(5, "Przygotowywanie środowiska...")
-        log(f"--- ROZPOCZĘCIE PROCESU DLA: {address} ---")
+        # Ukrywamy pełny adres w logach publicznych, jeśli chcesz być super bezpieczny,
+        # ale tutaj logujemy to co wpisał użytkownik w trakcie sesji.
+        log(f"--- ROZPOCZĘCIE PROCESU ---") 
         
         chrome_options = Options()
         chrome_options.add_argument("--headless=new")
@@ -244,14 +246,12 @@ def run_full_process(address, allowed_types):
         schedule_data = [] 
         
         try:
-            # UI: 10% - Łączenie
             update_progress(10, "Łączenie z systemem miejskim...")
-            log(f"Otwieranie strony: {TARGET_URL}")
+            log(f"Otwieranie strony źródłowej")
             driver.get(TARGET_URL)
             wait = WebDriverWait(driver, 20)
             log("Strona załadowana.")
 
-            # UI: 15% - Cookies
             update_progress(15, "Konfiguracja sesji...")
             try:
                 consent = WebDriverWait(driver, 3).until(EC.element_to_be_clickable((By.XPATH, "//button[contains(.,'Zgoda na wszystkie')]")))
@@ -260,14 +260,12 @@ def run_full_process(address, allowed_types):
             except: 
                 log("Brak banera cookies lub już zaakceptowano.")
 
-            # UI: 20% - Wpisywanie
             update_progress(20, f"Szukanie adresu...")
             input_el = wait.until(EC.element_to_be_clickable((By.ID, "addressAutoComplete")))
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", input_el)
             input_el.clear()
             input_el.send_keys(address)
             
-            # UI: 25% - Szukanie
             update_progress(25, "Oczekiwanie na wyniki...")
             time.sleep(1.5)
 
@@ -275,19 +273,17 @@ def run_full_process(address, allowed_types):
                 suggestion = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "li.yui3-aclist-item")))
                 suggestion_text = suggestion.text
                 suggestion.click()
-                log(f"Wybrano adres z listy podpowiedzi: {suggestion_text}")
+                log(f"Wybrano adres z listy podpowiedzi.")
             except:
                 log("BŁĄD: Nie znaleziono adresu w podpowiedziach. Sprawdź pisownię.")
                 raise Exception("Nie znaleziono adresu w podpowiedziach!")
 
-            # UI: 30% - Pobieranie
             update_progress(30, "Pobieranie harmonogramu...")
             wait.until(EC.element_to_be_clickable((By.ID, "buttonNext"))).click()
             time.sleep(3)
             log("Załadowano widok harmonogramu.")
 
             # --- PDF ---
-            # UI: 40% - PDF Start
             update_progress(40, "Pobieranie pliku PDF...")
             try:
                 for f in glob.glob(os.path.join(STATIC_DIR, "*.pdf")): os.remove(f)
@@ -298,7 +294,6 @@ def run_full_process(address, allowed_types):
                 
                 timeout = 15
                 downloaded_file = None
-                # UI: 45% - Czekanie na plik
                 update_progress(45, "Zapisywanie pliku PDF...")
                 while timeout > 0:
                     files = glob.glob(os.path.join(STATIC_DIR, "*.pdf"))
@@ -315,14 +310,13 @@ def run_full_process(address, allowed_types):
                     if os.path.exists(original_pdf) and original_pdf != downloaded_file: os.remove(original_pdf)
                     os.rename(downloaded_file, original_pdf)
                     results["pdf_available"] = True
-                    log(f"Pobrano PDF: {os.path.basename(original_pdf)}")
+                    log(f"Pobrano plik PDF.")
 
-                    # UI: 55% - Generowanie PDF
                     update_progress(55, "Tworzenie opisanego pliku PDF...")
                     log("Rozpoczynam nakładanie etykiet na PDF...")
                     if process_pdf_labels(original_pdf, labeled_pdf):
                         results["pdf_labeled_available"] = True
-                        log("Sukces: Utworzono 'harmonogram_opisany.pdf'.")
+                        log("Sukces: Utworzono plik z etykietami.")
                     else:
                         log("Błąd generowania opisanego PDF.")
                 else:
@@ -332,7 +326,6 @@ def run_full_process(address, allowed_types):
                 log(f"Wyjątek obsługi PDF: {str(e)}")
 
             # --- SCRAPING ---
-            # UI: 65% - HTML
             update_progress(65, "Analiza terminów odbioru...")
             element_ids = {"paper-date": "Papier", "mixed-date": "Zmieszane", "metals-date": "Metale i tworzywa sztuczne", "glass-date": "Szkło", "bio-date": "Bio", "green-date": "Zielone"}
             for html_id, waste_name in element_ids.items():
@@ -347,7 +340,6 @@ def run_full_process(address, allowed_types):
                     log(f"Brak danych HTML dla: {waste_name}")
 
         finally:
-            # UI: 70% - Sprzątanie
             update_progress(70, "Zamykanie połączenia...")
             driver.quit()
             log("Zamknięto sterownik Selenium.")
@@ -357,7 +349,6 @@ def run_full_process(address, allowed_types):
             raise Exception("Brak danych harmonogramu.")
 
         # --- GOOGLE CALENDAR ---
-        # UI: 75% - Autoryzacja
         update_progress(75, "Autoryzacja Google Calendar...")
         service_google = get_google_service()
         if service_google:
@@ -365,7 +356,6 @@ def run_full_process(address, allowed_types):
             calendar_id = None
             page_token = None
             
-            # UI: 78% - Szukanie kalendarza
             update_progress(78, "Weryfikacja kalendarza...")
             while True:
                 cal_list = service_google.calendarList().list(pageToken=page_token).execute()
@@ -380,11 +370,10 @@ def run_full_process(address, allowed_types):
                 log(f"Kalendarz '{CALENDAR_NAME}' nie istnieje. Tworzenie...")
                 created_cal = service_google.calendars().insert(body={'summary': CALENDAR_NAME, 'timeZone': 'Europe/Warsaw'}).execute()
                 calendar_id = created_cal['id']
-                log(f"Utworzono nowy kalendarz (ID: {calendar_id}).")
+                log(f"Utworzono nowy kalendarz.")
             else:
-                log(f"Używam istniejącego kalendarza (ID: ...{calendar_id[-10:]}).")
+                log(f"Używam istniejącego kalendarza.")
 
-            # UI: 80% - Pobieranie istniejących
             update_progress(80, "Pobieranie obecnych wpisów...")
             now_iso = datetime.datetime.utcnow().isoformat() + 'Z'
             existing = service_google.events().list(calendarId=calendar_id, timeMin=now_iso, singleEvents=True).execute().get('items', [])
@@ -392,7 +381,6 @@ def run_full_process(address, allowed_types):
 
             count = 0
             for i, (date_text, waste_type) in enumerate(schedule_data):
-                # UI: 80-95% - Pętla dodawania
                 current_percent = 80 + int((i/len(schedule_data))*15)
                 update_progress(current_percent, f"Synchronizacja: {waste_type}...")
                 
@@ -430,7 +418,6 @@ def run_full_process(address, allowed_types):
             
             results["added_events"] = count
             
-            # -- KLUCZOWA ZMIANA: Logowanie PRZED zapisem stanu --
             log(f"Podsumowanie: Dodano {count} nowych wydarzeń.")
             log("--- ZAKOŃCZONO SUKCESEM ---")
             
@@ -441,7 +428,6 @@ def run_full_process(address, allowed_types):
         results['timestamp'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         save_state(results)
         
-        # UI: 100% - Koniec
         with progress_lock:
             progress_state["percent"] = 100
             progress_state["message"] = "Zakończono pomyślnie!"
@@ -473,12 +459,14 @@ def auto_scheduler():
                         ed = parse_polish_date(item['dateText'])
                         if ed and ed == yesterday: should_run = True; break
                     
-                    if should_run:
+                    # Jeśli nie ma zapisanego adresu, automat nie ruszy
+                    saved_addr = state.get("saved_address", "")
+                    if should_run and saved_addr:
                         print(f"[AUTO] Wykryto odbiór wczoraj. Start aktualizacji...")
                         reset_progress()
                         state['last_auto_run'] = today
                         save_state(state)
-                        run_full_process(state.get("saved_address", "Marszałkowska 1"), list(WASTE_COLORS.keys()))
+                        run_full_process(saved_addr, list(WASTE_COLORS.keys()))
             time.sleep(3600)
         except: time.sleep(60)
 
