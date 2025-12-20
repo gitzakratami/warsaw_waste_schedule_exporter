@@ -257,6 +257,35 @@
     let pollingInterval = null;
     let isAuthenticated = false; // Nowa zmienna stanu
 
+    // --- WALIDACJA ADRESU W CZASIE RZECZYWISTYM ---
+    function validateRunButton() {
+        const addrInput = document.getElementById('addressInput');
+        const runBtn = document.getElementById('runBtn');
+        if (!addrInput || !runBtn) return;
+
+        const val = addrInput.value.trim();
+        // Jeśli proces już trwa, nie ruszamy przycisku
+        if (runBtn.classList.contains('cursor-not-allowed') && (runBtn.innerText.includes('...') || runBtn.innerText.includes('ŁADOWANIE'))) return;
+
+        if (val.length < 3) {
+            runBtn.disabled = true;
+            runBtn.classList.add('opacity-50', 'cursor-not-allowed', 'grayscale');
+            if(!runBtn.innerText.includes('TRWA') && !runBtn.innerText.includes('ŁADOWANIE')) {
+                runBtn.innerHTML = '<i class="fas fa-exclamation-circle text-lg"></i><span>WPISZ ADRES ABY ROZPOCZĄĆ</span>';
+            }
+        } else {
+            runBtn.disabled = false;
+            runBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'grayscale');
+            if(!runBtn.innerText.includes('TRWA') && !runBtn.innerText.includes('ŁADOWANIE')) {
+                // Przywracamy strukturę dla updateMainButton
+                if (!document.getElementById('btnIcon')) {
+                    runBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin hidden" id="btnSpinner"></i><span id="btnIcon"></span><span id="btnText"></span>';
+                }
+                updateMainButton();
+            }
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         initTheme();
         loadAddress();
@@ -265,6 +294,11 @@
         loadLastState(); 
         checkRunningProcess();
         checkAuthStatus(); // Sprawdź logowanie przy starcie
+        
+        // Init walidacji
+        const addrInput = document.getElementById('addressInput');
+        if(addrInput) addrInput.addEventListener('input', validateRunButton);
+        validateRunButton();
     });
 
     // --- LOGOWANIE I STATUS ---
@@ -275,6 +309,7 @@
             const data = await res.json();
             isAuthenticated = data.authenticated;
             updateMainButton();
+            validateRunButton();
         } catch(e) { console.error("Auth check failed", e); }
     }
 

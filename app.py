@@ -215,6 +215,7 @@ def run_full_process(address, allowed_types):
         results["logs"].append(f"[{ts}] {msg}")
 
     try:
+        # Sprawdzamy auth na początku
         service_google = get_google_service()
         if not service_google:
              raise Exception("Brak autoryzacji Google. Kliknij 'Połącz z Google' w panelu.")
@@ -233,7 +234,13 @@ def run_full_process(address, allowed_types):
         prefs = {"download.default_directory": STATIC_DIR, "download.prompt_for_download": False, "plugins.always_open_pdf_externally": True}
         chrome_options.add_experimental_option("prefs", prefs)
         
-        service = Service(ChromeDriverManager().install())
+        # Hybrydowe sterowniki (Docker vs Local)
+        if os.path.exists("/usr/bin/chromium") and os.path.exists("/usr/bin/chromedriver"):
+            chrome_options.binary_location = "/usr/bin/chromium"
+            service = Service("/usr/bin/chromedriver")
+        else:
+            service = Service(ChromeDriverManager().install())
+
         driver = webdriver.Chrome(service=service, options=chrome_options)
         log("Sterownik przeglądarki uruchomiony poprawnie.")
         
@@ -317,7 +324,6 @@ def run_full_process(address, allowed_types):
 
         # Calendar
         update_progress(75, "Wysyłanie do Kalendarza...")
-        
         cal_id = None
         page_token = None
         while True:
