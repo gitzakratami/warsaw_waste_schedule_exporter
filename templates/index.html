@@ -26,6 +26,11 @@
     .dark ::-webkit-scrollbar-thumb { background: #475569; }
     
     .progress-transition { transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+    
+    /* Animacja przycisków */
+    .btn-anim { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .btn-anim:not(:disabled):hover { transform: translateY(-3px); box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.2); }
+    .btn-anim:not(:disabled):active { transform: translateY(0); box-shadow: 0 5px 10px -5px rgba(0, 0, 0, 0.2); }
   </style>
 </head>
 <body class="bg-gray-100 dark:bg-[#0f172a] min-h-screen text-gray-800 dark:text-gray-100 transition-colors duration-500 font-sans">
@@ -43,14 +48,13 @@
                 <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Warszawa 19115 & Google Calendar</p>
             </div>
         </div>
-        <button onclick="toggleDarkMode()" class="w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-md hover:bg-gray-50 dark:hover:bg-slate-700 transition flex items-center justify-center group">
+        <button onclick="toggleDarkMode()" class="btn-anim w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-md hover:bg-gray-50 dark:hover:bg-slate-700 transition flex items-center justify-center group">
             <i class="fas fa-moon dark:hidden text-slate-600 group-hover:-rotate-12 transition-transform"></i>
             <i class="fas fa-sun hidden dark:block text-yellow-400 group-hover:rotate-45 transition-transform"></i>
         </button>
     </div>
 
     <!-- MAIN GRID -->
-    <!-- items-stretch: WYMUSZA RÓWNĄ WYSOKOŚĆ KOLUMN -->
     <div class="grid lg:grid-cols-12 gap-6 items-stretch">
         
         <!-- LEWA KOLUMNA (Ustawienia) -->
@@ -66,12 +70,12 @@
                     class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm font-medium transition-colors mb-3"
                     value="Obozowa 90" />
                 <button onclick="saveAddress()" 
-                        class="w-full bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-bold py-3 rounded-lg transition uppercase tracking-wide shadow-lg shadow-slate-500/20">
+                        class="btn-anim w-full bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-bold py-3 rounded-lg transition uppercase tracking-wide shadow-lg shadow-slate-500/20">
                     Zapisz Adres
                 </button>
             </div>
 
-            <!-- Automat (POPRAWIONY) -->
+            <!-- Automat -->
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 flex justify-between items-center flex-shrink-0 card-hover">
                 <div>
                     <div class="flex items-center mb-1">
@@ -80,14 +84,13 @@
                     </div>
                     <div id="autoStatusText" class="text-xs font-bold text-gray-400 mt-1 ml-8 transition-colors duration-300">WYŁĄCZONY</div>
                 </div>
-                <label class="relative inline-flex items-center cursor-pointer">
+                <label class="relative inline-flex items-center cursor-pointer btn-anim">
                     <input type="checkbox" id="autoModeToggle" class="sr-only peer" onchange="toggleAutoMode()">
                     <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                 </label>
             </div>
 
             <!-- Filtry -->
-            <!-- flex-grow: To sprawia, że ten panel rozciąga się, by wyrównać dół z prawą kolumną -->
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden flex flex-col flex-grow card-hover">
                 <div class="p-6 border-b border-gray-100 dark:border-slate-700">
                     <div class="flex items-center">
@@ -95,13 +98,12 @@
                         <h2 class="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Filtry</h2>
                     </div>
                 </div>
-                <!-- Kontener z justify-between aby filtry ładnie się rozłożyły -->
                 <div id="syncConfigContainer" class="p-6 flex flex-col justify-between flex-grow h-full space-y-1"></div>
             </div>
 
         </div>
 
-        <!-- PRAWA KOLUMNA -->
+        <!-- PRAWA KOLUMNA (Panel Sterowania + Lista) -->
         <div class="lg:col-span-8 flex flex-col gap-6 fade-in" style="animation-delay: 0.2s">
             
             <!-- PANEL STEROWANIA -->
@@ -114,9 +116,8 @@
                     <div class="w-full sm:w-auto">
                         <div class="flex items-center gap-3 mb-1">
                             <h3 class="text-xl font-bold text-gray-800 dark:text-white">Status Synchronizacji</h3>
-                            <!-- PRZYCISK DO 19115 -->
                             <a href="https://warszawa19115.pl/harmonogramy-wywozu-odpadow" target="_blank" 
-                               class="group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase tracking-wide hover:bg-blue-100 dark:hover:bg-blue-900/50 transition border border-blue-100 dark:border-blue-800/50">
+                               class="btn-anim group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] font-bold uppercase tracking-wide hover:bg-blue-100 dark:hover:bg-blue-900/50 transition border border-blue-100 dark:border-blue-800">
                                 <span>Otwórz 19115</span>
                                 <i class="fas fa-external-link-alt text-[9px] group-hover:translate-x-0.5 transition-transform"></i>
                             </a>
@@ -144,42 +145,38 @@
                 <!-- SIATKA PRZYCISKÓW -->
                 <div class="grid grid-cols-3 gap-4 relative z-10">
                     <button id="runBtn" onclick="runScraping()" 
-                            class="col-span-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-4 px-6 rounded-lg shadow-lg shadow-emerald-500/20 transition-all transform active:scale-[0.98] flex items-center justify-center gap-3 text-sm uppercase tracking-wide group">
+                            class="btn-anim col-span-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-4 px-6 rounded-lg shadow-lg shadow-emerald-500/20 transition-all transform active:scale-[0.98] flex items-center justify-center gap-3 text-sm uppercase tracking-wide group">
                         <i class="fas fa-sync-alt text-lg group-hover:rotate-180 transition-transform duration-700"></i> 
                         <span>Synchronizuj Teraz</span>
                     </button>
 
                     <button id="pdfBtn" onclick="openPdf(false)" disabled
-                            class="col-span-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 hover:border-gray-300 dark:hover:border-slate-500 py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium group">
-                        <i class="fas fa-file-pdf text-red-500 text-lg group-hover:scale-110 transition-transform"></i>
+                            class="btn-anim col-span-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium group">
+                        <i class="fas fa-file-pdf text-red-500 text-lg group-hover:scale-110 transition-transform duration-300"></i>
                         <span>Oryginał</span>
                     </button>
                     
                     <button id="pdfLabeledBtn" onclick="openPdf(true)" disabled
-                            class="col-span-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 hover:border-gray-300 dark:hover:border-slate-500 py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium group">
-                        <i class="fas fa-magic text-purple-500 text-lg group-hover:scale-110 transition-transform"></i>
+                            class="btn-anim col-span-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium group">
+                        <i class="fas fa-magic text-purple-500 text-lg group-hover:scale-110 transition-transform duration-300"></i>
                         <span>Opisany</span>
                     </button>
 
                     <button onclick="viewLogs()" 
-                            class="col-span-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 hover:border-gray-300 dark:hover:border-slate-500 py-3 rounded-lg transition-all flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium group">
-                        <i class="fas fa-terminal text-gray-500 dark:text-gray-400 text-lg group-hover:scale-110 transition-transform"></i>
+                            class="btn-anim col-span-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 py-3 rounded-lg transition-all flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium group">
+                        <i class="fas fa-terminal text-gray-500 dark:text-gray-400 text-lg group-hover:scale-110 transition-transform duration-300"></i>
                         <span>Logi</span>
                     </button>
                 </div>
             </div>
 
             <!-- LISTA TERMINÓW -->
-            <!-- flex-grow: wypełnia resztę miejsca w prawej kolumnie -->
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 flex-grow flex flex-col">
                 <h3 class="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-6 flex items-center border-b border-gray-100 dark:border-slate-700 pb-4">
                     <i class="far fa-calendar-alt mr-2 text-lg text-emerald-500"></i> Znalezione terminy
                 </h3>
                 
-                <!-- CONTAINER NA KAFELKI (Grid + AutoAnimate) -->
-                <!-- relative + min-h aby placeholder dobrze wyglądał -->
                 <div id="scheduleContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 content-start relative flex-grow">
-                    <!-- Placeholder -->
                     <div class="col-span-full flex flex-col items-center justify-center py-10 text-gray-400 dark:text-slate-600 absolute inset-0">
                         <i class="fas fa-robot text-6xl mb-4 opacity-10 animate-bounce" style="animation-duration: 3s"></i>
                         <p class="text-sm font-medium opacity-50">Brak danych harmonogramu</p>
@@ -190,13 +187,13 @@
         </div>
     </div>
 
-    <!-- Modal Logs (Backdrop Blur) -->
+    <!-- Modal Logs -->
     <div id="logsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 transition-opacity duration-300" onclick="if(event.target.id=='logsModal') closeModal()">
         <div class="bg-slate-900 rounded-xl w-full max-w-5xl h-[80vh] flex flex-col border border-slate-700 shadow-2xl overflow-hidden transform scale-100 transition-all">
             <div class="flex justify-between items-center p-4 bg-slate-800 border-b border-slate-700">
                 <h3 class="text-emerald-400 font-mono text-sm uppercase tracking-wider"><i class="fas fa-terminal mr-2"></i> Logi Systemowe</h3>
                 <div class="flex gap-2">
-                    <button onclick="copyLogs()" class="text-xs px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-200 transition font-bold uppercase tracking-wide">Kopiuj</button>
+                    <button onclick="copyLogs()" class="btn-anim text-xs px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-200 transition font-bold uppercase tracking-wide">Kopiuj</button>
                     <button onclick="closeModal()" class="text-slate-400 hover:text-white px-2 transition-transform hover:rotate-90"><i class="fas fa-times text-lg"></i></button>
                 </div>
             </div>
@@ -209,7 +206,6 @@
   <!-- BIBLIOTEKA ANIMACJI -->
   <script type="module">
     import autoAnimate from 'https://cdn.jsdelivr.net/npm/@formkit/auto-animate/index.mjs';
-    // Włączamy animację na kontenerze
     autoAnimate(document.getElementById('scheduleContainer'), { duration: 300 });
   </script>
 
@@ -439,14 +435,18 @@
         const btn1 = document.getElementById('pdfBtn');
         const btn2 = document.getElementById('pdfLabeledBtn');
         
+        // Klasy bazowe z animacją i borderem (ważne, by border był zawsze)
+        const baseClass = "btn-anim col-span-1 py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium border group";
+        
         const enabledClass = "bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-600 cursor-pointer shadow-sm hover:shadow";
         const disabledClass = "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-400 dark:text-slate-600";
 
+        // Uwzględniamy group-hover na ikonach dynamicznie w HTML, tutaj zarządzamy kontenerem
         btn1.disabled = !originalAvail;
-        btn1.className = `col-span-1 py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium border ${originalAvail ? enabledClass : disabledClass}`;
+        btn1.className = `${baseClass} ${originalAvail ? enabledClass : disabledClass}`;
 
         btn2.disabled = !labeledAvail;
-        btn2.className = `col-span-1 py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex flex-col md:flex-row items-center justify-center gap-2 text-sm font-medium border ${labeledAvail ? enabledClass : disabledClass}`;
+        btn2.className = `${baseClass} ${labeledAvail ? enabledClass : disabledClass}`;
     }
 
     function openPdf(labeled) {
@@ -510,14 +510,12 @@
 
         // Generujemy/Aktualizujemy kafelki
         sorted.forEach((item) => {
-            // Slugify ID: usuwamy spacje i polskie znaki z wasteType + data
             const uniqueId = `card-${item.wasteType.replace(/\s+/g, '')}-${item.dateText.replace(/\s+/g, '')}`;
             const isSynced = syncPreferences[item.wasteType];
             
-            // Style
             const activeStyle = "bg-white dark:bg-slate-700 border-l-4 border-emerald-500 shadow-sm opacity-100 transform scale-100";
             const inactiveStyle = "bg-gray-50 dark:bg-slate-800/50 border-l-4 border-gray-300 dark:border-slate-600 opacity-60 grayscale-[0.5]";
-            const className = `p-4 rounded-xl flex justify-between items-center ${isSynced ? activeStyle : inactiveStyle} transition-all duration-300 hover:shadow-md hover:translate-x-1`;
+            const className = `p-4 rounded-xl flex justify-between items-center ${isSynced ? activeStyle : inactiveStyle} transition-all duration-300 hover-lift`;
 
             let div = existingElements[uniqueId];
 
@@ -544,19 +542,14 @@
                 div.id = uniqueId;
                 div.innerHTML = htmlContent;
             } else {
-                // Update zawartości jeśli się zmieniła (głównie styl statusu)
                 if (div.className !== className) div.className = className;
-                div.innerHTML = htmlContent; // Odświeżamy wnętrze na wszelki wypadek (ikona, tekst)
+                div.innerHTML = htmlContent;
             }
             div.className = className;
-
-            // To jest klucz do animacji: appendChild przesuwa istniejący element na koniec
-            // AutoAnimate wykrywa tę zmianę pozycji i ją animuje
             c.appendChild(div);
             delete existingElements[uniqueId];
         });
 
-        // Usuń kafelki, których już nie ma w danych (np. po nowym pobraniu)
         Object.values(existingElements).forEach(el => el.remove());
     }
 
