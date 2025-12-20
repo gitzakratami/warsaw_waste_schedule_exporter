@@ -7,7 +7,7 @@ import glob
 import threading
 import math
 import fitz  # PyMuPDF
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 
 # Selenium
 from selenium import webdriver
@@ -21,10 +21,13 @@ from webdriver_manager.chrome import ChromeDriverManager
 # Google Calendar API
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
+from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 
 app = Flask(__name__)
+# KLUCZOWE DLA LOGOWANIA:
+app.secret_key = 'bardzo_tajny_klucz_sesji_zmien_mnie_na_losowy_ciag'
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' # Pozwala na logowanie bez HTTPS (lokalnie)
 
 # --- KONFIGURACJA ---
 TARGET_URL = "https://warszawa19115.pl/harmonogramy-wywozu-odpadow"
@@ -77,7 +80,7 @@ def reset_progress():
         progress_state["status"] = "running"
         progress_state["result"] = None
 
-# --- LOGIKA PRZETWARZANIA PDF ---
+# --- LOGIKA PDF I HELPERY ---
 
 def color_distance(c1, c2):
     return math.sqrt(sum((a - b) ** 2 for a, b in zip(c1, c2)))
@@ -87,9 +90,7 @@ def find_matching_fraction(pix, bbox, legend):
     end_x = min(pix.width, int(bbox.x1) - 2)
     start_y = max(0, int(bbox.y0) + 2)
     end_y = min(pix.height, int(bbox.y1) - 2)
-
     if start_x >= end_x or start_y >= end_y: return None
-
     for x in range(start_x, end_x, 2):
         for y in range(start_y, end_y, 2):
             pixel_color = pix.pixel(x, y)
@@ -104,13 +105,11 @@ def process_pdf_labels(input_pdf_path, output_pdf_path):
         FONT_SIZE = 10
         font_path = "C:/Windows/Fonts/arialbd.ttf"
         if not os.path.exists(font_path): font_path = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
-        
         custom_font = None
         use_custom_font = False
         if os.path.exists(font_path):
             try: custom_font = fitz.Font(fontfile=font_path); use_custom_font = True
-            except Exception as e: print(f"[PDF] Błąd fontu: {e}")
-        
+            except: pass
         legend = [
             {"name": "ZIELONE", "color": (83, 88, 90)}, {"name": "ZMIESZANE", "color": (33, 35, 35)},
             {"name": "PAPIER", "color": (0, 95, 170)}, {"name": "SZKŁO", "color": (45, 160, 45)},
@@ -118,26 +117,22 @@ def process_pdf_labels(input_pdf_path, output_pdf_path):
             {"name": "PLASTIK", "color": (230, 150, 0)}, {"name": "SKIP", "color": (140, 90, 60)}, 
             {"name": "SKIP", "color": (110, 70, 40)}, {"name": "SKIP", "color": (230, 90, 20)}, 
         ]
-
         for page in doc:
             pix = page.get_pixmap()
             images = page.get_image_info(xrefs=True)
             legend_y = page.rect.height * 0.9
             writer = fitz.TextWriter(page.rect)
             page_icons = []
-            
             for img in images:
                 bbox = fitz.Rect(img['bbox'])
                 if bbox.width < 8 or bbox.width > 80: continue
                 if bbox.y0 > legend_y: continue
                 lbl = find_matching_fraction(pix, bbox, legend)
                 if lbl: page_icons.append({"rect": bbox, "label": lbl})
-
             for icon in page_icons:
                 if icon["label"] == "SKIP": continue
                 txt = icon["label"]
                 tlen = custom_font.text_length(txt, fontsize=FONT_SIZE) if use_custom_font else fitz.get_text_length(txt, fontsize=FONT_SIZE, fontname="Helvetica-Bold")
-                
                 right = icon["rect"].x0 - 5
                 collision = True
                 while collision:
@@ -146,24 +141,15 @@ def process_pdf_labels(input_pdf_path, output_pdf_path):
                     for obs in page_icons:
                         if obs is icon: continue
                         if trect.intersects(obs["rect"]):
-                            right = obs["rect"].x0 - 5
-                            collision = True
-                            break
-                
+                            right = obs["rect"].x0 - 5; collision = True; break
                 fx, fy = right - tlen, icon["rect"].y1 - 2
                 if use_custom_font: writer.append((fx, fy), txt, font=custom_font, fontsize=FONT_SIZE)
                 else: page.insert_text((fx, fy), txt, fontsize=FONT_SIZE, fontname="Helvetica-Bold", color=(0,0,0))
-
             if use_custom_font: writer.write_text(page, color=(0, 0, 0))
-
         doc.save(output_pdf_path)
         doc.close()
         return True
-    except Exception as e:
-        print(f"[PDF ERROR] {e}")
-        return False
-
-# --- POMOCNICZE ---
+    except: return False
 
 def parse_polish_date(date_text):
     try:
@@ -178,17 +164,26 @@ def parse_polish_date(date_text):
         return datetime.date(year, month, day)
     except: return None
 
-def get_google_service():
+# --- AUTH & GOOGLE ---
+
+def get_google_creds():
     creds = None
     if os.path.exists(TOKEN_FILE):
         with open(TOKEN_FILE, 'rb') as token: creds = pickle.load(token)
+    
     if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token: creds.refresh(Request())
+        if creds and creds.expired and creds.refresh_token:
+            try:
+                creds.refresh(Request())
+                with open(TOKEN_FILE, 'wb') as token: pickle.dump(creds, token)
+            except: return None
         else:
-            if not os.path.exists(CREDENTIALS_FILE): return None
-            flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
-            creds = flow.run_local_server(port=0)
-        with open(TOKEN_FILE, 'wb') as token: pickle.dump(creds, token)
+            return None
+    return creds
+
+def get_google_service():
+    creds = get_google_creds()
+    if not creds: return None
     return build('calendar', 'v3', credentials=creds)
 
 def load_state():
@@ -196,7 +191,6 @@ def load_state():
         try:
             with open(STATE_FILE, 'r', encoding='utf-8') as f: return json.load(f)
         except: pass
-    # --- WYCZYSZCZONO DOMYŚLNY ADRES ---
     return {"schedule": [], "logs": [], "pdf_available": False, "pdf_labeled_available": False, "auto_mode": False, "last_auto_run": "", "saved_address": ""}
 
 def save_state(state):
@@ -204,7 +198,7 @@ def save_state(state):
         with open(STATE_FILE, 'w', encoding='utf-8') as f: json.dump(state, f, ensure_ascii=False)
     except: pass
 
-# --- GŁÓWNA LOGIKA ---
+# --- PROCES SYNCHRONIZACJI ---
 
 def run_full_process(address, allowed_types):
     current_state = load_state()
@@ -215,18 +209,18 @@ def run_full_process(address, allowed_types):
         "last_auto_run": current_state.get("last_auto_run", ""),
         "saved_address": address
     }
-
     def log(msg):
-        timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-        formatted_msg = f"[{timestamp}] {msg}"
-        print(formatted_msg)
-        results["logs"].append(formatted_msg)
+        ts = datetime.datetime.now().strftime("%H:%M:%S")
+        print(f"[{ts}] {msg}")
+        results["logs"].append(f"[{ts}] {msg}")
 
     try:
-        update_progress(5, "Przygotowywanie środowiska...")
-        # Ukrywamy pełny adres w logach publicznych, jeśli chcesz być super bezpieczny,
-        # ale tutaj logujemy to co wpisał użytkownik w trakcie sesji.
-        log(f"--- ROZPOCZĘCIE PROCESU ---") 
+        service_google = get_google_service()
+        if not service_google:
+             raise Exception("Brak autoryzacji Google. Kliknij 'Połącz z Google' w panelu.")
+
+        update_progress(5, "Start przeglądarki...")
+        log(f"--- START DLA: {address} ---")
         
         chrome_options = Options()
         chrome_options.add_argument("--headless=new")
@@ -244,57 +238,46 @@ def run_full_process(address, allowed_types):
         log("Sterownik przeglądarki uruchomiony poprawnie.")
         
         schedule_data = [] 
-        
         try:
-            update_progress(10, "Łączenie z systemem miejskim...")
-            log(f"Otwieranie strony źródłowej")
+            update_progress(10, "Pobieranie strony...")
+            log(f"Strona: {TARGET_URL}")
             driver.get(TARGET_URL)
             wait = WebDriverWait(driver, 20)
             log("Strona załadowana.")
 
-            update_progress(15, "Konfiguracja sesji...")
+            update_progress(15, "Akceptacja cookies...")
             try:
                 consent = WebDriverWait(driver, 3).until(EC.element_to_be_clickable((By.XPATH, "//button[contains(.,'Zgoda na wszystkie')]")))
                 consent.click()
                 log("Zaakceptowano pliki cookie.")
             except: 
-                log("Brak banera cookies lub już zaakceptowano.")
+                log("Brak banera cookies.")
 
-            update_progress(20, f"Szukanie adresu...")
+            update_progress(20, "Szukanie adresu...")
             input_el = wait.until(EC.element_to_be_clickable((By.ID, "addressAutoComplete")))
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", input_el)
             input_el.clear()
             input_el.send_keys(address)
-            
-            update_progress(25, "Oczekiwanie na wyniki...")
             time.sleep(1.5)
 
             try:
                 suggestion = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "li.yui3-aclist-item")))
-                suggestion_text = suggestion.text
+                txt_sug = suggestion.text
                 suggestion.click()
-                log(f"Wybrano adres z listy podpowiedzi.")
-            except:
-                log("BŁĄD: Nie znaleziono adresu w podpowiedziach. Sprawdź pisownię.")
-                raise Exception("Nie znaleziono adresu w podpowiedziach!")
+                log(f"Wybrano: {txt_sug}")
+            except: raise Exception("Brak podpowiedzi adresu!")
 
             update_progress(30, "Pobieranie harmonogramu...")
             wait.until(EC.element_to_be_clickable((By.ID, "buttonNext"))).click()
             time.sleep(3)
-            log("Załadowano widok harmonogramu.")
 
-            # --- PDF ---
-            update_progress(40, "Pobieranie pliku PDF...")
+            # PDF
+            update_progress(40, "Pobieranie PDF...")
             try:
                 for f in glob.glob(os.path.join(STATIC_DIR, "*.pdf")): os.remove(f)
-                
-                pdf_link = wait.until(EC.element_to_be_clickable((By.ID, "downloadPdfLink")))
-                pdf_link.click()
-                log("Kliknięto przycisk pobierania PDF.")
-                
+                wait.until(EC.element_to_be_clickable((By.ID, "downloadPdfLink"))).click()
                 timeout = 15
                 downloaded_file = None
-                update_progress(45, "Zapisywanie pliku PDF...")
                 while timeout > 0:
                     files = glob.glob(os.path.join(STATIC_DIR, "*.pdf"))
                     if files:
@@ -302,31 +285,21 @@ def run_full_process(address, allowed_types):
                         if not downloaded_file.endswith(".crdownload"): break
                     time.sleep(1)
                     timeout -= 1
-                
                 if downloaded_file:
                     original_pdf = os.path.join(STATIC_DIR, "harmonogram.pdf")
                     labeled_pdf = os.path.join(STATIC_DIR, "harmonogram_opisany.pdf")
-                    
                     if os.path.exists(original_pdf) and original_pdf != downloaded_file: os.remove(original_pdf)
                     os.rename(downloaded_file, original_pdf)
                     results["pdf_available"] = True
-                    log(f"Pobrano plik PDF.")
-
-                    update_progress(55, "Tworzenie opisanego pliku PDF...")
-                    log("Rozpoczynam nakładanie etykiet na PDF...")
+                    log("Pobrano PDF.")
+                    update_progress(50, "Generowanie opisów PDF...")
                     if process_pdf_labels(original_pdf, labeled_pdf):
                         results["pdf_labeled_available"] = True
-                        log("Sukces: Utworzono plik z etykietami.")
-                    else:
-                        log("Błąd generowania opisanego PDF.")
-                else:
-                    log("Błąd: Timeout pobierania PDF.")
+                        log("PDF opisany pomyślnie.")
+            except Exception as e: log(f"Błąd PDF: {e}")
 
-            except Exception as e:
-                log(f"Wyjątek obsługi PDF: {str(e)}")
-
-            # --- SCRAPING ---
-            update_progress(65, "Analiza terminów odbioru...")
+            # HTML
+            update_progress(60, "Analiza danych...")
             element_ids = {"paper-date": "Papier", "mixed-date": "Zmieszane", "metals-date": "Metale i tworzywa sztuczne", "glass-date": "Szkło", "bio-date": "Bio", "green-date": "Zielone"}
             for html_id, waste_name in element_ids.items():
                 try:
@@ -335,97 +308,64 @@ def run_full_process(address, allowed_types):
                     if txt:
                         schedule_data.append((txt, waste_name))
                         results["schedule"].append({"dateText": txt, "wasteType": waste_name})
-                        log(f" -> Znaleziono termin w HTML: {waste_name} ({txt})")
-                except: 
-                    log(f"Brak danych HTML dla: {waste_name}")
-
+                        log(f" -> Znaleziono: {waste_name} ({txt})")
+                except: pass
         finally:
-            update_progress(70, "Zamykanie połączenia...")
             driver.quit()
-            log("Zamknięto sterownik Selenium.")
 
-        if not schedule_data: 
-            log("BŁĄD KRYTYCZNY: Nie znaleziono żadnych dat.")
-            raise Exception("Brak danych harmonogramu.")
+        if not schedule_data: raise Exception("Brak dat na stronie")
 
-        # --- GOOGLE CALENDAR ---
-        update_progress(75, "Autoryzacja Google Calendar...")
-        service_google = get_google_service()
-        if service_google:
-            log("Autoryzacja Google udana.")
-            calendar_id = None
-            page_token = None
+        # Calendar
+        update_progress(75, "Wysyłanie do Kalendarza...")
+        
+        cal_id = None
+        page_token = None
+        while True:
+            clist = service_google.calendarList().list(pageToken=page_token).execute()
+            for e in clist['items']:
+                if e['summary'] == CALENDAR_NAME: cal_id = e['id']; break
+            if cal_id: break
+            page_token = clist.get('nextPageToken')
+            if not page_token: break
+        
+        if not cal_id:
+            cal_id = service_google.calendars().insert(body={'summary': CALENDAR_NAME, 'timeZone': 'Europe/Warsaw'}).execute()['id']
+            log("Utworzono nowy kalendarz.")
+
+        now_iso = datetime.datetime.utcnow().isoformat() + 'Z'
+        existing = service_google.events().list(calendarId=cal_id, timeMin=now_iso, singleEvents=True).execute().get('items', [])
+
+        count = 0
+        for i, (date_text, waste_type) in enumerate(schedule_data):
+            update_progress(80 + int((i/len(schedule_data))*15), f"Wysyłanie: {waste_type}...")
+            if waste_type not in allowed_types: 
+                log(f" -> Pominięto (filtr): {waste_type}")
+                continue
+            edate = parse_polish_date(date_text)
+            if not edate: continue
+            estr = edate.isoformat()
+            summary = f"Odbiór: {waste_type}"
             
-            update_progress(78, "Weryfikacja kalendarza...")
-            while True:
-                cal_list = service_google.calendarList().list(pageToken=page_token).execute()
-                for entry in cal_list['items']:
-                    if entry['summary'] == CALENDAR_NAME:
-                        calendar_id = entry['id']; break
-                if calendar_id: break
-                page_token = cal_list.get('nextPageToken')
-                if not page_token: break
+            dup = False
+            for ev in existing:
+                if ev.get('start', {}).get('date') == estr and ev.get('summary') == summary: dup = True; break
             
-            if not calendar_id:
-                log(f"Kalendarz '{CALENDAR_NAME}' nie istnieje. Tworzenie...")
-                created_cal = service_google.calendars().insert(body={'summary': CALENDAR_NAME, 'timeZone': 'Europe/Warsaw'}).execute()
-                calendar_id = created_cal['id']
-                log(f"Utworzono nowy kalendarz.")
+            if not dup:
+                body = {
+                    'summary': summary, 'start': {'date': estr}, 'end': {'date': estr},
+                    'colorId': WASTE_COLORS.get(waste_type, "8"), 'transparency': 'transparent',
+                    'reminders': {'useDefault': False, 'overrides': [{'method': 'popup', 'minutes': 300}]}
+                }
+                service_google.events().insert(calendarId=cal_id, body=body).execute()
+                log(f" -> DODANO: {waste_type} ({estr})")
+                count += 1
             else:
-                log(f"Używam istniejącego kalendarza.")
+                log(f" -> Duplikat: {waste_type}")
 
-            update_progress(80, "Pobieranie obecnych wpisów...")
-            now_iso = datetime.datetime.utcnow().isoformat() + 'Z'
-            existing = service_google.events().list(calendarId=calendar_id, timeMin=now_iso, singleEvents=True).execute().get('items', [])
-            log(f"Znaleziono {len(existing)} przyszłych wydarzeń w kalendarzu.")
-
-            count = 0
-            for i, (date_text, waste_type) in enumerate(schedule_data):
-                current_percent = 80 + int((i/len(schedule_data))*15)
-                update_progress(current_percent, f"Synchronizacja: {waste_type}...")
-                
-                if waste_type not in allowed_types: 
-                    log(f" -> Pominięto: {waste_type} (odznaczony w filtrach).")
-                    continue
-                
-                event_date = parse_polish_date(date_text)
-                if not event_date: 
-                    log(f" -> Błąd daty: {date_text}")
-                    continue
-                
-                event_date_str = event_date.isoformat()
-                summary = f"Odbiór: {waste_type}"
-                
-                is_duplicate = False
-                for ev in existing:
-                    if ev.get('start', {}).get('date') == event_date_str and ev.get('summary') == summary:
-                        is_duplicate = True; break
-                
-                if is_duplicate:
-                    log(f" -> Ignoruję duplikat: {summary} ({event_date_str})")
-                else:
-                    try:
-                        body = {
-                            'summary': summary, 'start': {'date': event_date_str}, 'end': {'date': event_date_str},
-                            'colorId': WASTE_COLORS.get(waste_type, "8"), 'transparency': 'transparent',
-                            'reminders': {'useDefault': False, 'overrides': [{'method': 'popup', 'minutes': 300}]}
-                        }
-                        service_google.events().insert(calendarId=calendar_id, body=body).execute()
-                        log(f" -> SUKCES: Dodano {summary} ({event_date_str})")
-                        count += 1
-                    except Exception as ev_err:
-                        log(f" -> BŁĄD API Google przy {summary}: {str(ev_err)}")
-            
-            results["added_events"] = count
-            
-            log(f"Podsumowanie: Dodano {count} nowych wydarzeń.")
-            log("--- ZAKOŃCZONO SUKCESEM ---")
-            
-        else:
-            log("BŁĄD: Brak dostępu do Google Calendar API.")
-            log("--- ZAKOŃCZONO Z BŁĘDEM AUTORYZACJI ---")
-
+        results["added_events"] = count
         results['timestamp'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log(f"--- SUKCES: Dodano {count} wydarzeń ---")
+        
         save_state(results)
         
         with progress_lock:
@@ -435,9 +375,7 @@ def run_full_process(address, allowed_types):
             progress_state["result"] = results
 
     except Exception as e:
-        log(f"BŁĄD KRYTYCZNY: {str(e)}")
-        log("--- PRZERWANO Z POWODU BŁĘDU ---")
-        
+        log(f"BŁĄD: {str(e)}")
         with progress_lock:
             progress_state["status"] = "error"
             progress_state["message"] = str(e)
@@ -453,47 +391,78 @@ def auto_scheduler():
             if state.get("auto_mode", False) and progress_state["status"] != "running":
                 today = datetime.date.today().isoformat()
                 if state.get("last_auto_run") != today:
-                    yesterday = datetime.date.today() - datetime.timedelta(days=1)
-                    should_run = False
-                    for item in state.get("schedule", []):
-                        ed = parse_polish_date(item['dateText'])
-                        if ed and ed == yesterday: should_run = True; break
-                    
-                    # Jeśli nie ma zapisanego adresu, automat nie ruszy
-                    saved_addr = state.get("saved_address", "")
-                    if should_run and saved_addr:
-                        print(f"[AUTO] Wykryto odbiór wczoraj. Start aktualizacji...")
-                        reset_progress()
-                        state['last_auto_run'] = today
-                        save_state(state)
-                        run_full_process(saved_addr, list(WASTE_COLORS.keys()))
+                    addr = state.get("saved_address")
+                    if addr and get_google_creds():
+                        yesterday = datetime.date.today() - datetime.timedelta(days=1)
+                        should_run = False
+                        for item in state.get("schedule", []):
+                            ed = parse_polish_date(item['dateText'])
+                            if ed and ed == yesterday: should_run = True; break
+                        
+                        if should_run:
+                            reset_progress()
+                            state['last_auto_run'] = today
+                            save_state(state)
+                            run_full_process(addr, list(WASTE_COLORS.keys()))
             time.sleep(3600)
         except: time.sleep(60)
 
 threading.Thread(target=auto_scheduler, daemon=True).start()
 
+# --- ROUTES ---
+
 @app.route('/')
-def home(): return render_template('index.html')
+def home():
+    return render_template('index.html')
+
+@app.route('/login')
+def login():
+    flow = Flow.from_client_secrets_file(
+        CREDENTIALS_FILE,
+        scopes=SCOPES,
+        redirect_uri=url_for('oauth2callback', _external=True)
+    )
+    auth_url, state = flow.authorization_url(access_type='offline', include_granted_scopes='true')
+    session['state'] = state
+    return redirect(auth_url)
+
+@app.route('/oauth2callback')
+def oauth2callback():
+    state = session['state']
+    flow = Flow.from_client_secrets_file(
+        CREDENTIALS_FILE,
+        scopes=SCOPES,
+        state=state,
+        redirect_uri=url_for('oauth2callback', _external=True)
+    )
+    flow.fetch_token(authorization_response=request.url)
+    with open(TOKEN_FILE, 'wb') as token: pickle.dump(flow.credentials, token)
+    return redirect(url_for('home'))
+
+@app.route('/api/auth-status')
+def auth_status():
+    return jsonify({"authenticated": get_google_creds() is not None})
 
 @app.route('/api/sync', methods=['POST'])
 def api_sync():
-    data = request.json
+    if not get_google_creds(): return jsonify({"status": "error", "message": "Brak logowania"})
     if progress_state["status"] == "running": return jsonify({"status": "error", "message": "Proces trwa"})
     reset_progress()
-    threading.Thread(target=run_full_process, args=(data.get('address'), data.get('allowedTypes'))).start()
+    threading.Thread(target=run_full_process, args=(request.json.get('address'), request.json.get('allowedTypes'))).start()
     return jsonify({"status": "started"})
 
 @app.route('/api/progress', methods=['GET'])
 def api_progress():
-    with progress_lock: return jsonify(progress_state)
+    with progress_lock:
+        return jsonify(progress_state)
 
 @app.route('/api/toggle-auto', methods=['POST'])
 def toggle_auto():
-    enable = request.json.get('enable', False)
-    state = load_state()
-    state['auto_mode'] = enable
-    save_state(state)
-    return jsonify({"status": "success", "auto_mode": enable})
+    en = request.json.get('enable', False)
+    st = load_state()
+    st['auto_mode'] = en
+    save_state(st)
+    return jsonify({"status": "success", "auto_mode": en})
 
 @app.route('/api/last-state', methods=['GET'])
 def last_state(): return jsonify(load_state())

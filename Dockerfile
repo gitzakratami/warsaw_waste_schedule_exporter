@@ -1,25 +1,32 @@
-# Używamy nowszego, stabilnego Pythona 3.11
+# Baza: lekki Linux z Pythonem
 FROM python:3.11-slim
 
-# Instalacja Chromium i sterowników
-# Te komendy są kluczowe, bo Selenium potrzebuje przeglądarki systemowej
+# Ustawienia, żeby logi widoczne były od razu
+ENV PYTHONUNBUFFERED=1
+
+# Instalacja Chromium (przeglądarki), sterowników i czcionek
+# fonts-liberation jest KLUCZOWE, żebyś mógł pisać polskie znaki na PDF w Dockerze
 RUN apt-get update && apt-get install -y \
     chromium \
     chromium-driver \
+    fonts-liberation \
+    wget \
+    curl \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
-# Ustawienie zmiennych, żeby Python nie tworzył plików .pyc i buforował wyjścia
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
+# Folder roboczy w kontenerze
 WORKDIR /app
 
-# Najpierw kopiujemy tylko requirements, żeby Docker cache'ował instalację bibliotek
+# Najpierw instalujemy biblioteki (dzięki temu kolejne budowania będą szybsze)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Dopiero potem kopiujemy resztę kodu
+# Kopiujemy resztę Twoich plików
 COPY . .
 
-# Uruchomienie
+# Otwieramy port
+EXPOSE 5000
+
+# Startujemy aplikację
 CMD ["python", "app.py"]

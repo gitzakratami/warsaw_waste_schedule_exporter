@@ -53,7 +53,7 @@
         <!-- LEWA KOLUMNA (Ustawienia) -->
         <div class="lg:col-span-4 flex flex-col gap-6 fade-in" style="animation-delay: 0.1s">
             
-            <!-- Adres (WYCZYSZCZONY) -->
+            <!-- Adres -->
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 flex-shrink-0 card-hover">
                 <div class="flex items-center mb-4">
                     <i class="fas fa-map-marker-alt text-red-500 mr-3 text-lg"></i>
@@ -103,6 +103,7 @@
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 flex-shrink-0 card-hover relative overflow-hidden">
                 <div class="absolute top-0 right-0 -mt-10 -mr-10 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
+                <!-- Górny pasek info -->
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 pb-4 border-b border-gray-100 dark:border-slate-700 gap-4 relative z-10">
                     <div class="w-full sm:w-auto">
                         <div class="flex items-center gap-3 mb-1">
@@ -121,21 +122,26 @@
                     </div>
                 </div>
 
+                <!-- Pasek Postępu -->
                 <div id="progressContainer" class="hidden mb-6 bg-gray-50 dark:bg-slate-900 p-3 rounded-lg border border-gray-100 dark:border-slate-700 relative z-10">
                     <div class="flex justify-between mb-1 text-xs font-bold"><span id="progressText" class="text-emerald-600 animate-pulse">Start...</span><span id="progressPercent">0%</span></div>
                     <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700 overflow-hidden"><div id="progressBar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-2 rounded-full progress-transition" style="width: 0%"></div></div>
                 </div>
 
+                <!-- Error Alert -->
                 <div id="errorAlert" class="hidden mb-6 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 text-red-700 dark:text-red-400 p-4 rounded text-sm relative z-10">
                     <p class="font-bold mb-1"><i class="fas fa-exclamation-circle mr-2"></i>Wystąpił błąd</p> 
                     <span id="errorMessage"></span>
                 </div>
 
+                <!-- SIATKA PRZYCISKÓW -->
                 <div class="grid grid-cols-3 gap-4 relative z-10">
-                    <button id="runBtn" onclick="runScraping()" 
-                            class="col-span-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-4 px-6 rounded-lg shadow-lg shadow-emerald-500/20 transition-all transform active:scale-[0.98] flex items-center justify-center gap-3 text-sm uppercase tracking-wide group">
-                        <i class="fas fa-sync-alt text-lg group-hover:rotate-180 transition-transform duration-700"></i> 
-                        <span>Synchronizuj Teraz</span>
+                    <!-- DYNAMICZNY PRZYCISK (LOGIN / SYNC) -->
+                    <button id="runBtn" onclick="handleMainButton()" 
+                            class="col-span-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-6 rounded-lg shadow-lg shadow-emerald-500/20 transition-all transform active:scale-[0.98] flex items-center justify-center gap-3 text-sm uppercase tracking-wide group">
+                        <i class="fas fa-circle-notch fa-spin hidden" id="btnSpinner"></i>
+                        <span id="btnIcon"><i class="fas fa-sync-alt text-lg group-hover:rotate-180 transition-transform duration-700"></i></span>
+                        <span id="btnText">ŁADOWANIE...</span>
                     </button>
 
                     <button id="pdfBtn" onclick="openPdf(false)" disabled
@@ -163,6 +169,7 @@
                 <h3 class="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-6 flex items-center border-b border-gray-100 dark:border-slate-700 pb-4">
                     <i class="far fa-calendar-alt mr-2 text-lg text-emerald-500"></i> Znalezione terminy
                 </h3>
+                
                 <div id="scheduleContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4 content-start relative flex-grow">
                     <div class="col-span-full flex flex-col items-center justify-center py-10 text-gray-400 dark:text-slate-600 absolute inset-0">
                         <i class="fas fa-robot text-6xl mb-4 opacity-10 animate-bounce" style="animation-duration: 3s"></i>
@@ -194,7 +201,7 @@
                         <span class="text-xs">Python & Flask</span>
                     </div>
                     <span class="text-gray-300 dark:text-slate-700">|</span>
-                    <a href="https://github.com/gitzakratami/warsaw_waste_schedule_exporter" target="_blank" class="hover:text-emerald-500 transition-colors flex items-center gap-2 group">
+                    <a href="https://github.com" target="_blank" class="hover:text-emerald-500 transition-colors flex items-center gap-2 group">
                         <i class="fab fa-github text-lg group-hover:rotate-12 transition-transform"></i>
                         <span class="font-medium">GitHub</span>
                     </a>
@@ -203,7 +210,7 @@
         </div>
     </footer>
 
-    <!-- Modal Logs -->
+    <!-- Modale -->
     <div id="logsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 transition-opacity duration-300" onclick="if(event.target.id=='logsModal') closeModal()">
         <div class="bg-slate-900 rounded-xl w-full max-w-5xl h-[80vh] flex flex-col border border-slate-700 shadow-2xl overflow-hidden transform scale-100 transition-all">
             <div class="flex justify-between items-center p-4 bg-slate-800 border-b border-slate-700">
@@ -225,6 +232,7 @@
   </script>
 
   <script>
+    // --- KONFIGURACJA ---
     const wasteTypesConfig = {
       "Papier": { icon: "fas fa-newspaper" },
       "Metale i tworzywa sztuczne": { icon: "fas fa-cube" },
@@ -234,10 +242,20 @@
       "Zielone": { icon: "fas fa-tree" }
     };
 
+    const wasteColors = {
+      "Papier": "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800",
+      "Metale i tworzywa sztuczne": "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800",
+      "Szkło": "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800",
+      "Bio": "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800",
+      "Zmieszane": "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600",
+      "Zielone": "bg-lime-50 text-lime-700 border-lime-200 dark:bg-lime-900/20 dark:text-lime-300 dark:border-lime-800"
+    };
+
     let currentScheduleData = [];
     let currentLogs = [];
     let syncPreferences = {}; 
     let pollingInterval = null;
+    let isAuthenticated = false; // Nowa zmienna stanu
 
     document.addEventListener('DOMContentLoaded', () => {
         initTheme();
@@ -246,19 +264,65 @@
         renderSyncConfig();
         loadLastState(); 
         checkRunningProcess();
+        checkAuthStatus(); // Sprawdź logowanie przy starcie
     });
+
+    // --- LOGOWANIE I STATUS ---
+
+    async function checkAuthStatus() {
+        try {
+            const res = await fetch('/api/auth-status');
+            const data = await res.json();
+            isAuthenticated = data.authenticated;
+            updateMainButton();
+        } catch(e) { console.error("Auth check failed", e); }
+    }
+
+    function updateMainButton() {
+        const btn = document.getElementById('runBtn');
+        const iconSpan = document.getElementById('btnIcon');
+        const textSpan = document.getElementById('btnText');
+        
+        // Reset classes
+        btn.className = "col-span-3 font-bold py-4 px-6 rounded-lg shadow-lg transition-all transform active:scale-[0.98] flex items-center justify-center gap-3 text-sm uppercase tracking-wide group";
+        
+        if (isAuthenticated) {
+            btn.classList.add('bg-gradient-to-r', 'from-emerald-600', 'to-teal-600', 'hover:from-emerald-500', 'hover:to-teal-500', 'text-white', 'shadow-emerald-500/20');
+            iconSpan.innerHTML = '<i class="fas fa-sync-alt text-lg group-hover:rotate-180 transition-transform duration-700"></i>';
+            textSpan.textContent = 'Synchronizuj Teraz';
+        } else {
+            btn.classList.add('bg-blue-600', 'hover:bg-blue-700', 'text-white', 'shadow-blue-500/30');
+            iconSpan.innerHTML = '<i class="fab fa-google text-lg"></i>';
+            textSpan.textContent = 'Połącz z Google Calendar';
+        }
+    }
+
+    function handleMainButton() {
+        if (isAuthenticated) {
+            runScraping();
+        } else {
+            window.location.href = '/login';
+        }
+    }
+
+    // --- LOGIKA APLIKACJI ---
 
     async function runScraping() {
         const address = document.getElementById('addressInput').value;
         if(!address) { alert("Wpisz adres!"); return; }
 
         const btn = document.getElementById('runBtn');
+        const spinner = document.getElementById('btnSpinner');
+        const icon = document.getElementById('btnIcon');
         const alertEl = document.getElementById('errorAlert');
+
         btn.disabled = true;
         btn.classList.add('opacity-75', 'cursor-not-allowed', 'brightness-90');
-        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> PRZETWARZANIE...';
-        alertEl.classList.add('hidden');
         
+        spinner.classList.remove('hidden');
+        icon.classList.add('hidden');
+        
+        alertEl.classList.add('hidden');
         updatePdfButtons(false, false);
 
         const allowedTypes = Object.keys(syncPreferences).filter(key => syncPreferences[key]);
@@ -285,9 +349,13 @@
 
     function resetBtn() {
         const btn = document.getElementById('runBtn');
+        const spinner = document.getElementById('btnSpinner');
+        const icon = document.getElementById('btnIcon');
+
         btn.disabled = false;
         btn.classList.remove('opacity-75', 'cursor-not-allowed', 'brightness-90');
-        btn.innerHTML = '<i class="fas fa-sync-alt text-lg group-hover:rotate-180 transition-transform duration-700"></i><span>SYNCHRONIZUJ TERAZ</span>';
+        spinner.classList.add('hidden');
+        icon.classList.remove('hidden');
     }
 
     function startPolling() {
@@ -333,13 +401,20 @@
             const state = await res.json();
             if(state.status === 'running') {
                 const btn = document.getElementById('runBtn');
+                const spinner = document.getElementById('btnSpinner');
+                const icon = document.getElementById('btnIcon');
+                
                 btn.disabled = true;
                 btn.classList.add('opacity-75', 'cursor-not-allowed', 'brightness-90');
-                btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> WZNAWIANIE...';
+                spinner.classList.remove('hidden');
+                icon.classList.add('hidden');
+                
                 startPolling();
             }
         } catch(e) {}
     }
+
+    // --- RENDERING I POMOCNICZE ---
 
     async function toggleAutoMode() {
         const toggle = document.getElementById('autoModeToggle');
