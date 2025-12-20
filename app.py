@@ -365,7 +365,10 @@ def run_full_process(address, allowed_types):
                 body = {
                     'summary': summary, 'start': {'date': estr}, 'end': {'date': estr},
                     'colorId': WASTE_COLORS.get(waste_type, "8"), 'transparency': 'transparent',
-                    'reminders': {'useDefault': False, 'overrides': [{'method': 'popup', 'minutes': 300}]}
+                    'reminders': {'useDefault': False, 'overrides': [
+                        {'method': 'popup', 'minutes': 300},
+                        {'method': 'email', 'minutes': 300}
+                    ]}
                 }
                 service_google.events().insert(calendarId=cal_id, body=body).execute()
                 log(f" -> DODANO: {waste_type} ({estr})")
@@ -479,4 +482,5 @@ def toggle_auto():
 def last_state(): return jsonify(load_state())
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)
+    # ssl_context='adhoc' generuje szybki certyfikat w locie
+    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False, ssl_context='adhoc')
