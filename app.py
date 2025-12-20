@@ -234,12 +234,17 @@ def run_full_process(address, allowed_types):
         prefs = {"download.default_directory": STATIC_DIR, "download.prompt_for_download": False, "plugins.always_open_pdf_externally": True}
         chrome_options.add_experimental_option("prefs", prefs)
         
-        # Hybrydowe sterowniki (Docker vs Local)
+        # --- ZMIANA: WARUNKOWE UŻYCIE STEROWNIKA ---
+        # Na Dockerze (Linux) używamy systemowego. Na Windowsie - Webdriver Manager.
         if os.path.exists("/usr/bin/chromium") and os.path.exists("/usr/bin/chromedriver"):
             chrome_options.binary_location = "/usr/bin/chromium"
             service = Service("/usr/bin/chromedriver")
+            log("Używam systemowego Chromium (Docker/Linux).")
         else:
+            # Importujemy tylko tutaj, żeby Docker nie wywalił błędu przy starcie
+            from webdriver_manager.chrome import ChromeDriverManager
             service = Service(ChromeDriverManager().install())
+            log("Używam Webdriver Manager (Windows/Local).")
 
         driver = webdriver.Chrome(service=service, options=chrome_options)
         log("Sterownik przeglądarki uruchomiony poprawnie.")
