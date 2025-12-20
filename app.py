@@ -83,124 +83,78 @@ def color_distance(c1, c2):
     return math.sqrt(sum((a - b) ** 2 for a, b in zip(c1, c2)))
 
 def find_matching_fraction(pix, bbox, legend):
-    # Margines 2px
     start_x = max(0, int(bbox.x0) + 2)
     end_x = min(pix.width, int(bbox.x1) - 2)
     start_y = max(0, int(bbox.y0) + 2)
     end_y = min(pix.height, int(bbox.y1) - 2)
 
-    if start_x >= end_x or start_y >= end_y:
-        return None
+    if start_x >= end_x or start_y >= end_y: return None
 
     for x in range(start_x, end_x, 2):
         for y in range(start_y, end_y, 2):
             pixel_color = pix.pixel(x, y)
-            if sum(pixel_color) > 700: continue # Ignoruj jasne tła
-
+            if sum(pixel_color) > 700: continue 
             for item in legend:
-                if color_distance(pixel_color, item["color"]) < 45:
-                    return item["name"]
+                if color_distance(pixel_color, item["color"]) < 45: return item["name"]
     return None
 
 def process_pdf_labels(input_pdf_path, output_pdf_path):
-    """Nakłada etykiety na PDF."""
     try:
         doc = fitz.open(input_pdf_path)
-        
         FONT_SIZE = 10
-        
-        # Obsługa czcionek (Windows lokalnie / Linux Docker)
         font_path = "C:/Windows/Fonts/arialbd.ttf"
-        if not os.path.exists(font_path):
-            font_path = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
+        if not os.path.exists(font_path): font_path = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
         
         custom_font = None
         use_custom_font = False
-
         if os.path.exists(font_path):
-            try:
-                custom_font = fitz.Font(fontfile=font_path)
-                use_custom_font = True
-            except Exception as e:
-                print(f"[PDF] Błąd ładowania czcionki: {e}")
-        else:
-            print("[PDF] Brak czcionki Arial/Liberation. Tekst może być domyślny.")
-
-        # DEFINICJA KOLORÓW
+            try: custom_font = fitz.Font(fontfile=font_path); use_custom_font = True
+            except Exception as e: print(f"[PDF] Błąd fontu: {e}")
+        
         legend = [
-            {"name": "ZIELONE",         "color": (83, 88, 90)},
-            {"name": "ZMIESZANE",       "color": (33, 35, 35)},
-            {"name": "PAPIER",          "color": (0, 95, 170)},
-            {"name": "SZKŁO",           "color": (45, 160, 45)},
-            {"name": "PLASTIK",         "color": (255, 205, 0)},
-            {"name": "PLASTIK",         "color": (245, 170, 0)},
-            {"name": "PLASTIK",         "color": (230, 150, 0)},
-            {"name": "SKIP",            "color": (140, 90, 60)}, 
-            {"name": "SKIP",            "color": (110, 70, 40)}, 
-            {"name": "SKIP",            "color": (230, 90, 20)}, 
+            {"name": "ZIELONE", "color": (83, 88, 90)}, {"name": "ZMIESZANE", "color": (33, 35, 35)},
+            {"name": "PAPIER", "color": (0, 95, 170)}, {"name": "SZKŁO", "color": (45, 160, 45)},
+            {"name": "PLASTIK", "color": (255, 205, 0)}, {"name": "PLASTIK", "color": (245, 170, 0)},
+            {"name": "PLASTIK", "color": (230, 150, 0)}, {"name": "SKIP", "color": (140, 90, 60)}, 
+            {"name": "SKIP", "color": (110, 70, 40)}, {"name": "SKIP", "color": (230, 90, 20)}, 
         ]
 
         for page in doc:
             pix = page.get_pixmap()
-            images_info = page.get_image_info(xrefs=True)
-            
-            page_height = page.rect.height
-            legend_cutoff_y = page_height * 0.9
-
+            images = page.get_image_info(xrefs=True)
+            legend_y = page.rect.height * 0.9
             writer = fitz.TextWriter(page.rect)
-            
             page_icons = []
-            for img in images_info:
+            
+            for img in images:
                 bbox = fitz.Rect(img['bbox'])
                 if bbox.width < 8 or bbox.width > 80: continue
-                if bbox.y0 > legend_cutoff_y: continue
-
-                label = find_matching_fraction(pix, bbox, legend)
-                if label:
-                    page_icons.append({"rect": bbox, "label": label})
+                if bbox.y0 > legend_y: continue
+                lbl = find_matching_fraction(pix, bbox, legend)
+                if lbl: page_icons.append({"rect": bbox, "label": lbl})
 
             for icon in page_icons:
                 if icon["label"] == "SKIP": continue
-
-                text_str = icon["label"]
+                txt = icon["label"]
+                tlen = custom_font.text_length(txt, fontsize=FONT_SIZE) if use_custom_font else fitz.get_text_length(txt, fontsize=FONT_SIZE, fontname="Helvetica-Bold")
                 
-                # --- POMIARY ---
-                if use_custom_font:
-                    text_len = custom_font.text_length(text_str, fontsize=FONT_SIZE)
-                else:
-                    text_len = fitz.get_text_length(text_str, fontsize=FONT_SIZE, fontname="Helvetica-Bold")
-
-                right_edge_of_text = icon["rect"].x0 - 5
-                
-                # --- KOLIZJE ---
+                right = icon["rect"].x0 - 5
                 collision = True
                 while collision:
                     collision = False
-                    text_rect = fitz.Rect(
-                        right_edge_of_text - text_len, 
-                        icon["rect"].y0,               
-                        right_edge_of_text,            
-                        icon["rect"].y1                
-                    )
-
-                    for obstacle in page_icons:
-                        if obstacle is icon: continue 
-                        if text_rect.intersects(obstacle["rect"]):
-                            right_edge_of_text = obstacle["rect"].x0 - 5
+                    trect = fitz.Rect(right - tlen, icon["rect"].y0, right, icon["rect"].y1)
+                    for obs in page_icons:
+                        if obs is icon: continue
+                        if trect.intersects(obs["rect"]):
+                            right = obs["rect"].x0 - 5
                             collision = True
-                            break 
-
-                final_x = right_edge_of_text - text_len
-                final_y = icon["rect"].y1 - 2
+                            break
                 
-                # --- WPISYWANIE DO BUFORA ---
-                if use_custom_font:
-                    writer.append((final_x, final_y), text_str, font=custom_font, fontsize=FONT_SIZE)
-                else:
-                    page.insert_text((final_x, final_y), text_str, fontsize=FONT_SIZE, fontname="Helvetica-Bold", color=(0,0,0))
+                fx, fy = right - tlen, icon["rect"].y1 - 2
+                if use_custom_font: writer.append((fx, fy), txt, font=custom_font, fontsize=FONT_SIZE)
+                else: page.insert_text((fx, fy), txt, fontsize=FONT_SIZE, fontname="Helvetica-Bold", color=(0,0,0))
 
-            if use_custom_font:
-                writer.write_text(page, color=(0, 0, 0))
+            if use_custom_font: writer.write_text(page, color=(0, 0, 0))
 
         doc.save(output_pdf_path)
         doc.close()
@@ -209,7 +163,7 @@ def process_pdf_labels(input_pdf_path, output_pdf_path):
         print(f"[PDF ERROR] {e}")
         return False
 
-# --- FUNKCJE POMOCNICZE I STARTOWE ---
+# --- POMOCNICZE ---
 
 def parse_polish_date(date_text):
     try:
@@ -227,41 +181,32 @@ def parse_polish_date(date_text):
 def get_google_service():
     creds = None
     if os.path.exists(TOKEN_FILE):
-        with open(TOKEN_FILE, 'rb') as token:
-            creds = pickle.load(token)
+        with open(TOKEN_FILE, 'rb') as token: creds = pickle.load(token)
     if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
+        if creds and creds.expired and creds.refresh_token: creds.refresh(Request())
         else:
-            if not os.path.exists(CREDENTIALS_FILE):
-                return None
+            if not os.path.exists(CREDENTIALS_FILE): return None
             flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
             creds = flow.run_local_server(port=0)
-        with open(TOKEN_FILE, 'wb') as token:
-            pickle.dump(creds, token)
+        with open(TOKEN_FILE, 'wb') as token: pickle.dump(creds, token)
     return build('calendar', 'v3', credentials=creds)
 
 def load_state():
     if os.path.exists(STATE_FILE):
         try:
-            with open(STATE_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
+            with open(STATE_FILE, 'r', encoding='utf-8') as f: return json.load(f)
         except: pass
-    return {
-        "schedule": [], "logs": [], 
-        "pdf_available": False, "pdf_labeled_available": False,
-        "auto_mode": False, "last_auto_run": "", "saved_address": "Marszałkowska 1"
-    }
+    return {"schedule": [], "logs": [], "pdf_available": False, "pdf_labeled_available": False, "auto_mode": False, "last_auto_run": "", "saved_address": "Marszałkowska 1"}
 
 def save_state(state):
     try:
-        with open(STATE_FILE, 'w', encoding='utf-8') as f:
-            json.dump(state, f, ensure_ascii=False)
+        with open(STATE_FILE, 'w', encoding='utf-8') as f: json.dump(state, f, ensure_ascii=False)
     except: pass
+
+# --- GŁÓWNA LOGIKA ---
 
 def run_full_process(address, allowed_types):
     current_state = load_state()
-    
     results = {
         "status": "success", "logs": [], "added_events": 0, "schedule": [],
         "pdf_available": False, "pdf_labeled_available": False,
@@ -277,8 +222,9 @@ def run_full_process(address, allowed_types):
         results["logs"].append(formatted_msg)
 
     try:
-        update_progress(5, "Uruchamianie przeglądarki...")
-        log(f"Start synchronizacji dla: {address}")
+        # UI: 5% - Start
+        update_progress(5, "Przygotowywanie środowiska...")
+        log(f"--- ROZPOCZĘCIE PROCESU DLA: {address} ---")
         
         chrome_options = Options()
         chrome_options.add_argument("--headless=new")
@@ -293,41 +239,67 @@ def run_full_process(address, allowed_types):
         
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=chrome_options)
+        log("Sterownik przeglądarki uruchomiony poprawnie.")
         
         schedule_data = [] 
         
         try:
-            update_progress(15, "Łączenie ze stroną 19115...")
+            # UI: 10% - Łączenie
+            update_progress(10, "Łączenie z systemem miejskim...")
+            log(f"Otwieranie strony: {TARGET_URL}")
             driver.get(TARGET_URL)
             wait = WebDriverWait(driver, 20)
+            log("Strona załadowana.")
 
+            # UI: 15% - Cookies
+            update_progress(15, "Konfiguracja sesji...")
             try:
-                WebDriverWait(driver, 3).until(EC.element_to_be_clickable((By.XPATH, "//button[contains(.,'Zgoda na wszystkie')]"))).click()
-            except: pass
+                consent = WebDriverWait(driver, 3).until(EC.element_to_be_clickable((By.XPATH, "//button[contains(.,'Zgoda na wszystkie')]")))
+                consent.click()
+                log("Zaakceptowano pliki cookie.")
+            except: 
+                log("Brak banera cookies lub już zaakceptowano.")
 
-            update_progress(25, "Wyszukiwanie adresu...")
+            # UI: 20% - Wpisywanie
+            update_progress(20, f"Szukanie adresu...")
             input_el = wait.until(EC.element_to_be_clickable((By.ID, "addressAutoComplete")))
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", input_el)
             input_el.clear()
             input_el.send_keys(address)
+            
+            # UI: 25% - Szukanie
+            update_progress(25, "Oczekiwanie na wyniki...")
             time.sleep(1.5)
 
             try:
-                wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "li.yui3-aclist-item"))).click()
-            except: raise Exception("Nie znaleziono adresu w podpowiedziach")
+                suggestion = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "li.yui3-aclist-item")))
+                suggestion_text = suggestion.text
+                suggestion.click()
+                log(f"Wybrano adres z listy podpowiedzi: {suggestion_text}")
+            except:
+                log("BŁĄD: Nie znaleziono adresu w podpowiedziach. Sprawdź pisownię.")
+                raise Exception("Nie znaleziono adresu w podpowiedziach!")
 
+            # UI: 30% - Pobieranie
+            update_progress(30, "Pobieranie harmonogramu...")
             wait.until(EC.element_to_be_clickable((By.ID, "buttonNext"))).click()
             time.sleep(3)
+            log("Załadowano widok harmonogramu.")
 
             # --- PDF ---
-            update_progress(40, "Pobieranie PDF...")
+            # UI: 40% - PDF Start
+            update_progress(40, "Pobieranie pliku PDF...")
             try:
                 for f in glob.glob(os.path.join(STATIC_DIR, "*.pdf")): os.remove(f)
                 
-                wait.until(EC.element_to_be_clickable((By.ID, "downloadPdfLink"))).click()
+                pdf_link = wait.until(EC.element_to_be_clickable((By.ID, "downloadPdfLink")))
+                pdf_link.click()
+                log("Kliknięto przycisk pobierania PDF.")
                 
                 timeout = 15
                 downloaded_file = None
+                # UI: 45% - Czekanie na plik
+                update_progress(45, "Zapisywanie pliku PDF...")
                 while timeout > 0:
                     files = glob.glob(os.path.join(STATIC_DIR, "*.pdf"))
                     if files:
@@ -343,22 +315,25 @@ def run_full_process(address, allowed_types):
                     if os.path.exists(original_pdf) and original_pdf != downloaded_file: os.remove(original_pdf)
                     os.rename(downloaded_file, original_pdf)
                     results["pdf_available"] = True
-                    log("PDF pobrany pomyślnie.")
+                    log(f"Pobrano PDF: {os.path.basename(original_pdf)}")
 
-                    # Etykietowanie
-                    update_progress(50, "Generowanie opisów na PDF...")
-                    log("Nakładanie etykiet na PDF...")
+                    # UI: 55% - Generowanie PDF
+                    update_progress(55, "Tworzenie opisanego pliku PDF...")
+                    log("Rozpoczynam nakładanie etykiet na PDF...")
                     if process_pdf_labels(original_pdf, labeled_pdf):
                         results["pdf_labeled_available"] = True
-                        log("Utworzono PDF z opisami.")
+                        log("Sukces: Utworzono 'harmonogram_opisany.pdf'.")
                     else:
-                        log("Błąd generowania opisów na PDF.")
+                        log("Błąd generowania opisanego PDF.")
+                else:
+                    log("Błąd: Timeout pobierania PDF.")
 
             except Exception as e:
-                log(f"Błąd PDF: {e}")
+                log(f"Wyjątek obsługi PDF: {str(e)}")
 
             # --- SCRAPING ---
-            update_progress(60, "Analiza danych ze strony...")
+            # UI: 65% - HTML
+            update_progress(65, "Analiza terminów odbioru...")
             element_ids = {"paper-date": "Papier", "mixed-date": "Zmieszane", "metals-date": "Metale i tworzywa sztuczne", "glass-date": "Szkło", "bio-date": "Bio", "green-date": "Zielone"}
             for html_id, waste_name in element_ids.items():
                 try:
@@ -367,21 +342,31 @@ def run_full_process(address, allowed_types):
                     if txt:
                         schedule_data.append((txt, waste_name))
                         results["schedule"].append({"dateText": txt, "wasteType": waste_name})
-                        # PRZYWRÓCONY LOG
-                        log(f" -> Znaleziono: {waste_name} ({txt})")
-                except: pass
+                        log(f" -> Znaleziono termin w HTML: {waste_name} ({txt})")
+                except: 
+                    log(f"Brak danych HTML dla: {waste_name}")
 
         finally:
+            # UI: 70% - Sprzątanie
+            update_progress(70, "Zamykanie połączenia...")
             driver.quit()
+            log("Zamknięto sterownik Selenium.")
 
-        if not schedule_data: raise Exception("Nie udało się pobrać żadnych dat ze strony.")
+        if not schedule_data: 
+            log("BŁĄD KRYTYCZNY: Nie znaleziono żadnych dat.")
+            raise Exception("Brak danych harmonogramu.")
 
         # --- GOOGLE CALENDAR ---
-        update_progress(80, "Wysyłanie do Google Calendar...")
+        # UI: 75% - Autoryzacja
+        update_progress(75, "Autoryzacja Google Calendar...")
         service_google = get_google_service()
         if service_google:
+            log("Autoryzacja Google udana.")
             calendar_id = None
             page_token = None
+            
+            # UI: 78% - Szukanie kalendarza
+            update_progress(78, "Weryfikacja kalendarza...")
             while True:
                 cal_list = service_google.calendarList().list(pageToken=page_token).execute()
                 for entry in cal_list['items']:
@@ -392,23 +377,34 @@ def run_full_process(address, allowed_types):
                 if not page_token: break
             
             if not calendar_id:
-                log(f"Tworzenie kalendarza: {CALENDAR_NAME}")
+                log(f"Kalendarz '{CALENDAR_NAME}' nie istnieje. Tworzenie...")
                 created_cal = service_google.calendars().insert(body={'summary': CALENDAR_NAME, 'timeZone': 'Europe/Warsaw'}).execute()
                 calendar_id = created_cal['id']
+                log(f"Utworzono nowy kalendarz (ID: {calendar_id}).")
+            else:
+                log(f"Używam istniejącego kalendarza (ID: ...{calendar_id[-10:]}).")
 
+            # UI: 80% - Pobieranie istniejących
+            update_progress(80, "Pobieranie obecnych wpisów...")
             now_iso = datetime.datetime.utcnow().isoformat() + 'Z'
             existing = service_google.events().list(calendarId=calendar_id, timeMin=now_iso, singleEvents=True).execute().get('items', [])
+            log(f"Znaleziono {len(existing)} przyszłych wydarzeń w kalendarzu.")
 
             count = 0
             for i, (date_text, waste_type) in enumerate(schedule_data):
-                update_progress(80 + int((i/len(schedule_data))*15), f"Przetwarzanie: {waste_type}")
+                # UI: 80-95% - Pętla dodawania
+                current_percent = 80 + int((i/len(schedule_data))*15)
+                update_progress(current_percent, f"Synchronizacja: {waste_type}...")
                 
                 if waste_type not in allowed_types: 
-                    log(f" -> Pominięto (filtr): {waste_type}")
+                    log(f" -> Pominięto: {waste_type} (odznaczony w filtrach).")
                     continue
                 
                 event_date = parse_polish_date(date_text)
-                if not event_date: continue
+                if not event_date: 
+                    log(f" -> Błąd daty: {date_text}")
+                    continue
+                
                 event_date_str = event_date.isoformat()
                 summary = f"Odbiór: {waste_type}"
                 
@@ -417,34 +413,45 @@ def run_full_process(address, allowed_types):
                     if ev.get('start', {}).get('date') == event_date_str and ev.get('summary') == summary:
                         is_duplicate = True; break
                 
-                if not is_duplicate:
-                    body = {
-                        'summary': summary, 'start': {'date': event_date_str}, 'end': {'date': event_date_str},
-                        'colorId': WASTE_COLORS.get(waste_type, "8"), 'transparency': 'transparent',
-                        'reminders': {'useDefault': False, 'overrides': [{'method': 'popup', 'minutes': 300}]}
-                    }
-                    service_google.events().insert(calendarId=calendar_id, body=body).execute()
-                    # PRZYWRÓCONY LOG
-                    log(f" -> DODANO: {waste_type} ({event_date_str})")
-                    count += 1
+                if is_duplicate:
+                    log(f" -> Ignoruję duplikat: {summary} ({event_date_str})")
                 else:
-                    log(f" -> Już istnieje: {waste_type} ({event_date_str})")
+                    try:
+                        body = {
+                            'summary': summary, 'start': {'date': event_date_str}, 'end': {'date': event_date_str},
+                            'colorId': WASTE_COLORS.get(waste_type, "8"), 'transparency': 'transparent',
+                            'reminders': {'useDefault': False, 'overrides': [{'method': 'popup', 'minutes': 300}]}
+                        }
+                        service_google.events().insert(calendarId=calendar_id, body=body).execute()
+                        log(f" -> SUKCES: Dodano {summary} ({event_date_str})")
+                        count += 1
+                    except Exception as ev_err:
+                        log(f" -> BŁĄD API Google przy {summary}: {str(ev_err)}")
             
             results["added_events"] = count
+            
+            # -- KLUCZOWA ZMIANA: Logowanie PRZED zapisem stanu --
+            log(f"Podsumowanie: Dodano {count} nowych wydarzeń.")
+            log("--- ZAKOŃCZONO SUKCESEM ---")
+            
         else:
-            log("Błąd autoryzacji Google - brak kluczy.")
+            log("BŁĄD: Brak dostępu do Google Calendar API.")
+            log("--- ZAKOŃCZONO Z BŁĘDEM AUTORYZACJI ---")
 
         results['timestamp'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         save_state(results)
         
+        # UI: 100% - Koniec
         with progress_lock:
             progress_state["percent"] = 100
-            progress_state["message"] = "Zakończono!"
+            progress_state["message"] = "Zakończono pomyślnie!"
             progress_state["status"] = "finished"
             progress_state["result"] = results
 
     except Exception as e:
         log(f"BŁĄD KRYTYCZNY: {str(e)}")
+        log("--- PRZERWANO Z POWODU BŁĘDU ---")
+        
         with progress_lock:
             progress_state["status"] = "error"
             progress_state["message"] = str(e)
@@ -467,6 +474,7 @@ def auto_scheduler():
                         if ed and ed == yesterday: should_run = True; break
                     
                     if should_run:
+                        print(f"[AUTO] Wykryto odbiór wczoraj. Start aktualizacji...")
                         reset_progress()
                         state['last_auto_run'] = today
                         save_state(state)
