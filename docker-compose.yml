@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   waste-app:
     build: .
@@ -10,6 +8,4 @@ services:
     environment:
       - TZ=Europe/Warsaw     # Ważne, żeby harmonogram działał w polskim czasie
     volumes:
-      # To mapuje pliki z serwera do kontenera.
-      # Dzięki temu token.pickle, last_state.json i PDFy nie zginą po restarcie.
       - .:/app
