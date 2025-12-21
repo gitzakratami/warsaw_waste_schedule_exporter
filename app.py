@@ -176,7 +176,9 @@ def get_google_creds():
             try:
                 creds.refresh(Request())
                 with open(TOKEN_FILE, 'wb') as token: pickle.dump(creds, token)
-            except: return None
+            except Exception as e:
+                print(f"Błąd odświeżania tokenu: {e}")
+                return None
         else:
             return None
     return creds
@@ -436,7 +438,8 @@ def login():
         scopes=SCOPES,
         redirect_uri=url_for('oauth2callback', _external=True)
     )
-    auth_url, state = flow.authorization_url(access_type='offline', include_granted_scopes='true')
+    # Dodano prompt='consent', aby wymusić zwrócenie refresh_token
+    auth_url, state = flow.authorization_url(access_type='offline', include_granted_scopes='true', prompt='consent')
     session['state'] = state
     return redirect(auth_url)
 
