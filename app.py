@@ -209,7 +209,8 @@ def run_full_process(address, allowed_types):
         "pdf_available": False, "pdf_labeled_available": False,
         "auto_mode": current_state.get("auto_mode", False),
         "last_auto_run": current_state.get("last_auto_run", ""),
-        "saved_address": address
+        "saved_address": address,
+        "allowed_types": allowed_types
     }
     def log(msg):
         ts = datetime.datetime.now().strftime("%H:%M:%S")
@@ -419,7 +420,8 @@ def auto_scheduler():
                             reset_progress()
                             state['last_auto_run'] = today
                             save_state(state)
-                            run_full_process(addr, list(WASTE_COLORS.keys()))
+                            allowed_types = state.get("allowed_types", list(WASTE_COLORS.keys()))
+                            run_full_process(addr, allowed_types)
             time.sleep(3600)
         except: time.sleep(60)
 
